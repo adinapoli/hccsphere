@@ -67,6 +67,16 @@ def neg(alist):
     return map(lambda x: -x, alist)
     
 
+def cell(verts):
+    def cell0(args):
+        i,j,k = args
+        return [index+1 for index,v in enumerate(verts) if AND([
+            (GE(0) if i==1 else LE(0))(v[1]),
+            (GE(0) if j==1 else LE(0))(v[2]),
+            (GE(0) if k==1 else LE(0))(v[3]) ])]
+    return cell0
+
+
 #PASSO 1: Generare il politopo fondamentale
 def sphere_kernel():
     
@@ -86,55 +96,85 @@ def sphere_kernel():
     mat_ki = np.array([zero,jk,k,ki])
     ijk = intersect(plane(mat_ij),plane(mat_jk),plane(mat_ki))
 
-
+    #///////////////////////////////////////////////////////////////////////////
+    # VERTICES
+    #///////////////////////////////////////////////////////////////////////////
     #La numerazione dei vertici e' importante, convenzione:
     # 0 origine
     # 1,2,3 i,j,k
     # 4,5,6 -i, -j, -k
-    # 7,8,9,10 nodi intermedi su X
-    # 11,12,13,14 nodi intermedi su Y
-    # 15, 16, 17, 18 nodi intermedi su Z
+    # 7,8,9,10 nodi intermedi intorno a Z
+    # 11,12,13,14 nodi intermedi intorno a Y
+    # 15, 16, 17, 18 nodi intermedi intorno a X
     # 19,20,21,22,23,24,25,26 gli ijk sugli 8 quadranti.
     verts = [zero,i,j,k,neg(i),neg(j),neg(k)]
-    along_x = [[1,cos(u), sin(u), 0] for u in np.arange(pi/4, 2*pi, pi/2)]
+    along_z = [[1,cos(u), sin(u), 0] for u in np.arange(pi/4, 2*pi, pi/2)]
     along_y = [[1,0, cos(u), sin(u)] for u in np.arange(pi/4, 2*pi, pi/2)]
-    along_z = [[1,cos(u), 0, sin(u)] for u in np.arange(pi/4, -3*pi/2, -pi/2)]
+    along_x = [[1,cos(u), 0, sin(u)] for u in np.arange(pi/4, -3*pi/2, -pi/2)]
 
-    verts += along_x
-    verts += along_y
     verts += along_z
+    verts += along_y
+    verts += along_x
     verts += [ijk] + reflect(ijk, 1)
     
     for vert in verts:
         v = g.addNode(0); g.setVecf(v,Vecf(vert))
 
+
     if DEBUG:
         assert(len(CELLSPERLEVEL(g)(0)) == 27)
 
 
+    #///////////////////////////////////////////////////////////////////////////
+    # EDGES
+    #///////////////////////////////////////////////////////////////////////////
+    #"Umbrella" like edges (from origin). They are 6 [28, 34)
     edges = DISTL([0, range(1,7)])
 
-    #ring along x
+    #A ring along z, same z. They are 8 [34..42)
     edges += zip([1,2,2,4,4,5,5,1], [7,7,8,8,9,9,10,10])
 
-    #ring along y
+    #ring along x, same x. They are 8 [42..50)
     edges += zip([2,3,3,5,5,6,6,2], [11,11,12,12,13,13,14,14])
 
-    #ring along z
+    #ring along y, same y. They are 8 [50, 58)
     edges += zip([3,1,1,6,6,4,4,3], [15,15,16,16,17,17,18,18])
 
-    #superior octant 19,20,21,22
-    edges += zip([7,8,9,10], [19,20,21,22])
+    #superior octant 19,20,21,22. They are 8 [58,66) + 4 [66,70)
     edges += zip([15,11,11,18,18,12,12,15], [19,19,20,20,21,21,22,22])
+    edges += zip([7,8,9,10], [19,20,21,22])
+
     
-    #inferior octant 23,24,25,26
-    edges += zip([7,8,9,10], [23,24,25,26])
+    #inferior octant 23,24,25,26. They are 8 [70,78) + 4 [78,82)
     edges += zip([16,14,14,17,17,13,13,16], [23,23,24,24,25,25,26,26])
+    edges += zip([7,8,9,10], [23,24,25,26])
 
 
     for edge in edges:
         node = g.addNode(1); g.addArch(edge[0]+1,node);g.addArch(edge[1]+1,node)
 
+    
+    if DEBUG:
+        assert(len(CELLSPERLEVEL(g)(1)) == 54)
+
+    
+    #///////////////////////////////////////////////////////////////////////////
+    # FACETS
+    #///////////////////////////////////////////////////////////////////////////
+    #faces = [[28,29,34,35], [29, 30, 42, 43], [28,30,50,51]]
+
+    #Facets with same z (z = 0)
+    faces =  [[28,34,35,29], [29,36,37,31], [31, 38, 39, 32], [32, 40, 41, 28]]
+
+    #Facets with same x (x = 0)
+    faces += [[29,42,43,30], [30,44,45,32], [32, 46, 47, 33], [33, 48, 49, 29]]
+
+    #Facets with same y (y = 0)
+    faces += [[28,50,51,30], [28,52,53,33], [33,54,55,31], [31, 56, 57, 30]]
+
+    for face in faces:
+        node = g.addNode(2)
+        for k in range(4): g.addArch(face[k],node)
 
     return g
         
@@ -326,7 +366,7 @@ if __name__ == '__main__':
     hull = SKELETON(1)(SPHERE(1)([8,8]))
     kernel = sphere_kernel()
     
-    batches = graph2batches(kernel)()
-    batches += list(Plasm.getBatches(hull))
-    
+    batches = graph2batches(kernel, [1.5,1.5,1.5])()
+    #batches += list(Plasm.getBatches(hull))
+
     PEEK(batches)
