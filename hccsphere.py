@@ -40,7 +40,7 @@ def plane(matrix):
     c = -np.linalg.det(minor(matrix,0,3))
     return d,a,b,c
 
-	
+
 def intersect(plane1,plane2,plane3):
     A = np.array([plane1[1:],plane2[1:],plane3[1:]])
     b = np.array([[-plane1[0]],[-plane2[0]],[-plane3[0]]])
@@ -104,17 +104,18 @@ def sphere_kernel():
     # 1,2,3 i,j,k
     # 4,5,6 -i, -j, -k
     # 7,8,9,10 nodi intermedi intorno a Z
-    # 11,12,13,14 nodi intermedi intorno a Y
-    # 15, 16, 17, 18 nodi intermedi intorno a X
+    # 11,12,13,14 nodi intermedi intorno a X
+    # 15, 16, 17, 18 nodi intermedi intorno a Y
     # 19,20,21,22,23,24,25,26 gli ijk sugli 8 quadranti.
     verts = [zero,i,j,k,neg(i),neg(j),neg(k)]
     along_z = [[1,cos(u), sin(u), 0] for u in np.arange(pi/4, 2*pi, pi/2)]
-    along_y = [[1,0, cos(u), sin(u)] for u in np.arange(pi/4, 2*pi, pi/2)]
-    along_x = [[1,cos(u), 0, sin(u)] for u in np.arange(pi/4, -3*pi/2, -pi/2)]
+    along_x = [[1,0, cos(u), sin(u)] for u in np.arange(pi/4, 2*pi, pi/2)]
+    along_y = [[1,cos(u), 0, sin(u)] for u in np.arange(pi/4, -3*pi/2, -pi/2)]
 
     verts += along_z
-    verts += along_y
     verts += along_x
+    verts += along_y
+
     verts += [ijk] + reflect(ijk, 1)
     
     for vert in verts:
@@ -143,7 +144,6 @@ def sphere_kernel():
     #superior octant 19,20,21,22. They are 8 [58,66) + 4 [66,70)
     edges += zip([15,11,11,18,18,12,12,15], [19,19,20,20,21,21,22,22])
     edges += zip([7,8,9,10], [19,20,21,22])
-
     
     #inferior octant 23,24,25,26. They are 8 [70,78) + 4 [78,82)
     edges += zip([16,14,14,17,17,13,13,16], [23,23,24,24,25,25,26,26])
@@ -176,6 +176,18 @@ def sphere_kernel():
         node = g.addNode(2)
         for k in range(4): g.addArch(face[k],node)
 
+    pols = AA(cell(verts))([[1,1,1],[-1,1,1],[1,-1,1],[1,1,-1],[-1,-1,1],[-1,1,-1],[1,-1,-1],[-1,-1,-1]])
+
+
+    #///////////////////////////////////////////////////////////////////////////
+    # 3-DIM SOLIDS
+    #///////////////////////////////////////////////////////////////////////////
+    for cll in pols:
+        node = g.addNode(3)
+        for vert in cll:
+            g.addArch(node,vert)
+
+            
     return g
         
     
@@ -306,32 +318,31 @@ def graph2batches(g,expl=[1,1,1]):
                           enumerate(pointIds)]
             
         if m==2: m+=1
-        if chains[0] != []: vertpoints = translate(chains[0])
-        if chains[1] != []:
+        if chains[0]: vertpoints = translate(chains[0])
+        if chains[1]:
             edges = [DOWNCELLS(g)(edge) for edge in chains[1]]
 
             edgepoints = AA(translate)(edges)
             
-        if chains[2] != []:
+        if chains[2]:
             facesAsEdges = [DOWNCELLS(g)(face) for face in chains[2]]
             facesAsVerts = [list(set(CAT(AA(DOWNCELLS(g))(face))))
                             for face in facesAsEdges]
             facepoints = AA(translate)(facesAsVerts)
-        if d == 3:
-            if chains[3] != []:
-                solidsAsVerts = [UPCELLS(g)(cell) for cell in chains[3]]
-                cellpoints = AA(translate)(solidsAsVerts)
+        if d == 3 and chains[3]:
+            solidsAsVerts = [UPCELLS(g)(cell) for cell in chains[3]]
+            cellpoints = AA(translate)(solidsAsVerts)
 
         
         batches = []
-        if chains[0] != []:
+        if chains[0]:
             batches = spheres(vertpoints,expl)
-        if chains[1] != []:
+        if chains[1]:
             batches = cylinders(batches,edgepoints,expl)
-        if chains[2] != []:
+        if chains[2]:
             batches = planecells(batches,facepoints,expl)
-        if n == 3:
-            if chains[3] != []: batches = cells(batches,cellpoints,expl)
+        if n == 3 and chains[3]:
+            batches = cells(batches,cellpoints,expl)
 
         return batches
 
