@@ -178,7 +178,7 @@ def sphere_kernel():
 
     pols = AA(cell(verts))([[1,1,1],[-1,1,1],[1,-1,1],[1,1,-1],[-1,-1,1],[-1,1,-1],[1,-1,-1],[-1,-1,-1]])
 
-
+    print cell(verts)([1,1,1])
     #///////////////////////////////////////////////////////////////////////////
     # 3-DIM SOLIDS
     #///////////////////////////////////////////////////////////////////////////
@@ -193,6 +193,29 @@ def sphere_kernel():
     
 
 #PASSO 2: Ricavare il bordo
+def get_coords_from(g):
+    def get_coords_from0(id):
+        vect = g.getVecf(id)
+        return [vect[0], vect[1], vect[2], vect[3]]
+
+    return get_coords_from0
+
+
+def exploded_points(g):
+    def exploded_points0(id_list, expl_factor):
+        coords_list = map(get_coords_from(g), id_list)
+        result = [[el[0], expl_factor*el[1],
+                   expl_factor*el[2],
+                   expl_factor*el[3]] for el in coords_list]
+        return result
+    return exploded_points0
+        
+#NOTA
+# Per evitare di generare due facce su due lati adiacenti di due casette,
+# e' sufficiente fare un controllo sul livello 2 del grafo, partendo dagli
+# spigoli (che sono in comune a 2 casette) e controllare risalendo il grafo
+# se esiste qualcosa di livello 2: Se esiste non deve essere ridisegnato.
+
 #PASSO 3.0: Per ogni quadrato del bordo, attacco una casetta
 #PASSO 3.1: Raddoppio i vertici
 #PASSO 3.2: Attacco gli spigoli
@@ -376,8 +399,15 @@ if __name__ == '__main__':
     
     hull = SKELETON(1)(SPHERE(1)([8,8]))
     kernel = sphere_kernel()
-    
-    batches = graph2batches(kernel, [1.5,1.5,1.5])()
-    #batches += list(Plasm.getBatches(hull))
+
+    #Prima casetta di prova [20,4,16,12]
+    batches = graph2batches(kernel)()
+    batches += list(Plasm.getBatches(hull))
 
     PEEK(batches)
+
+    graticcio = exploded_points(kernel)(range(2,28),1.5)
+    for elem in graticcio:
+        n = kernel.addNode(0); kernel.setVecf(n, Vecf(elem))
+
+    DRAW(kernel)()

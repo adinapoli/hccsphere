@@ -95,6 +95,7 @@ for face in faces:
 	for k in range(4): g.addArch(face[k],node)
 
 DRAW(g,[1.5,1.5,1.5])()
+VIEW(Hpc(g))
 
 VIEW(out)
 VIEW(SKELETON(1)(out))
