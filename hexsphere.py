@@ -1,4 +1,4 @@
-""" To generate the initial approximation of sphere with hexahedra """
+""" To generate the initial approximation of the sphere with hexahedra """
 
 import numpy as np
 from hasselib.graphLib6 import *
@@ -63,8 +63,16 @@ def matching(vclass1,signtr):
 def cyclicPairs(seq):
     return TRANS([seq,seq[1:]+[seq[0]]])
 
-def initialSphere(g):
+#/////////////////////////////////////////////////////////////////////
+# Sphere generation 
+#/////////////////////////////////////////////////////////////////////
 
+def initialSphere(g):
+	""" Generation of an approximation of the standard unit sphere with 8 hexahedra.
+		Return a Graph instance.
+	"""
+	#//////////////////////////////////////////////////////////
+	# generation of vertex nodes
 	a = 1/SQRT(2)
 	i,j,k = [[1,1,0,0],[1,0,1,0],[1,0,0,1]]
 	ij,jk,ki = [[1,a,a,0],[1,0,a,a],[1,a,0,a]]
@@ -80,6 +88,10 @@ def initialSphere(g):
 	for vert in verts:
 		v = g.addNode(0); g.setVecf(v,Vecf(vert))
 
+	vclass = classifyVerts(g)
+
+	#//////////////////////////////////////////////////////////
+	# generation of nodes of 3D cells
 	def cell(args):
 		i,j,k = args
 		return [index+1 for index,v in enumerate(verts) if AND([ 
@@ -88,14 +100,16 @@ def initialSphere(g):
 			(GE(0) if k==1 else LE(0))(v[3]) ])  ]
 			
 	vertices = [v[1:] for v in verts]
-	pols = AA(cell)([[1,1,1],[-1,1,1],[1,-1,1],[1,1,-1],[-1,-1,1],[-1,1,-1],[1,-1,-1],[-1,-1,-1]])
+	pols = AA(cell)(CART([[1,-1],[1,-1],[1,-1]]))
 	out = MKPOL([vertices, pols, None])
+	VIEW(SKELETON(1)(out))
 
 	for pol in pols:
 		node = g.addNode(3); 
 		for vert in pol: g.addArch(node,vert)
-	
-	vclass = classifyVerts(g)
+
+	#//////////////////////////////////////////////////////////
+	# generation of edge nodes 
 
 	edges = [[v,vclass[3][0]] for v in vclass[2]]
 	edges += CAT([DISTL([v,[w for w in vclass[2] if test(v,w)==1]]) for v in vclass[1]])
@@ -103,12 +117,12 @@ def initialSphere(g):
 
 	for edge in edges:
 		 node = g.addNode(1); g.addArch(edge[0],node);g.addArch(edge[1],node)
-			
-	faces = CAT([[[v,u,w,vclass[3][0]] for [u,w] in CART([vclass[2],vclass[2]]) if u<w and VECTSUM([
-		signature(u),signature(w) ])==signature(v)] for v in vclass[1]])
+
+	#//////////////////////////////////////////////////////////
+	# generation of face nodes 
+				
+	faces,o = [],vclass[3][0]
 	
-	faces = []
-	o = vclass[3][0]
 	for v in vclass[1]:
 		for [u,w] in CART([vclass[2],vclass[2]]):
 			if u<w and VECTSUM([ signature(u),signature(w) ])==signature(v):
@@ -121,7 +135,9 @@ def initialSphere(g):
 			signatures = AA(signature)(vertTriples[k])
 			common = COMP([AA(PROD),TRANS])(signatures)
 			w = [v for v in vclass[2] if signature(v) == common]+vertTriples[k]
-			faces += [CAT(AA(GETINTERSECTION(g))([[w[0],w[1]],[w[0],w[2]],[w[1],w[3]],[w[2],w[3]]]))]
+			faceEdgeVertices = [[w[0],w[1]],[w[0],w[2]],[w[1],w[3]],[w[2],w[3]]]
+			faceEdges = CAT(AA(GETINTERSECTION(g))(faceEdgeVertices))
+			faces += [faceEdges]
 		
 	for face in faces:
 		node = g.addNode(2) 
@@ -129,6 +145,12 @@ def initialSphere(g):
 		
 	return g
 
-g = Graph(3)
-g = initialSphere(g)
-DRAW(g,[1.5,1.5,1.5])()	
+#/////////////////////////////////////////////////////////////////////
+# Local testing 
+#/////////////////////////////////////////////////////////////////////
+
+if __name__=="__main__":
+	g = Graph(3)
+	g = initialSphere(g)
+	DRAW(g,[1.5,1.5,1.5])()	
+	
