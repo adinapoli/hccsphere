@@ -28,3 +28,11 @@ def sphere_kernel():
         g.setVecf(vert, Vecf([1.0] + points[i]))
         
     return g
+
+
+
+#Sembrava stampare (quasi) i paralleli
+norm_zero = []
+for id, vect in points.iteritems():
+    if INNERPROD([vect, [0,0,1]]) > 0:
+        norm_zero.append(id)
