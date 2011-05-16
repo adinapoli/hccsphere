@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="584825b1-27c9-4e61-8a93-c50a3b2f7530" name="Default" comment="" />
+    <list default="true" id="584825b1-27c9-4e61-8a93-c50a3b2f7530" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/hexsphere2.py" afterPath="$PROJECT_DIR$/hexsphere2.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/utils.py" afterPath="$PROJECT_DIR$/utils.py" />
+    </list>
     <ignored path="hccsphere.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -23,10 +27,46 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="hccsphere.py" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="hexsphere2.py" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/hexsphere2.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="225" column="29" selection-start="7660" selection-end="7660" vertical-scroll-proportion="0.4368932">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="graphLib6.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/hasselib/graphLib6.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="utils.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/utils.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="69" column="27" selection-start="1839" selection-end="1839" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="test9.py" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/hasselib/test9.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="47" column="4" selection-start="1588" selection-end="1641" vertical-scroll-proportion="0.0">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="hccsphere.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/hccsphere.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="216" column="73" selection-start="6768" selection-end="6768" vertical-scroll-proportion="0.6723301">
+            <state line="57" column="0" selection-start="1664" selection-end="1832" vertical-scroll-proportion="0.0">
               <folding />
             </state>
           </provider>
@@ -47,6 +87,9 @@
     <option name="changedFiles">
       <list>
         <option value="$PROJECT_DIR$/hccsphere.py" />
+        <option value="$PROJECT_DIR$/hexsphere.py" />
+        <option value="$PROJECT_DIR$/utils.py" />
+        <option value="$PROJECT_DIR$/hexsphere2.py" />
       </list>
     </option>
   </component>
@@ -92,6 +135,8 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Favorites" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -110,21 +155,33 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="hccsphere" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="hccsphere" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="hasselib" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
-      <pane id="Favorites" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="options.splitter.main.proportions" value="0.3" />
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="recentsLimit" value="5" />
     <property name="options.lastSelected" value="preferences.editor" />
-    <property name="options.searchVisible" value="true" />
+    <property name="recentsLimit" value="5" />
     <property name="options.splitter.details.proportions" value="0.2" />
+    <property name="options.searchVisible" value="true" />
   </component>
-  <component name="RunManager" selected="Python.hccsphere">
+  <component name="RunManager" selected="Python.hexsphere2">
     <configuration default="false" name="hccsphere" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -136,6 +193,40 @@
       <option name="IS_MODULE_SDK" value="true" />
       <module name="hccsphere" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/hccsphere.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PyDebugRunner" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PyDebugRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="hexsphere" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <module name="hccsphere" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/hexsphere.py" />
+      <option name="PARAMETERS" value="" />
+      <RunnerSettings RunnerId="PythonRunner" />
+      <ConfigurationWrapper RunnerId="PythonRunner" />
+      <method />
+    </configuration>
+    <configuration default="false" name="hexsphere2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <module name="hccsphere" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/hexsphere2.py" />
       <option name="PARAMETERS" value="" />
       <RunnerSettings RunnerId="PyDebugRunner" />
       <RunnerSettings RunnerId="PythonRunner" />
@@ -190,8 +281,10 @@
       <option name="PATTERN" value="" />
       <method />
     </configuration>
-    <list size="1">
+    <list size="3">
       <item index="0" class="java.lang.String" itemvalue="Python.hccsphere" />
+      <item index="1" class="java.lang.String" itemvalue="Python.hexsphere" />
+      <item index="2" class="java.lang.String" itemvalue="Python.hexsphere2" />
     </list>
   </component>
   <component name="ShelveChangesManager" show_recycled="false" />
@@ -225,7 +318,7 @@
     <frame x="4" y="22" width="1276" height="778" extended-state="6" />
     <editor active="false" />
     <layout>
-      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32978722" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.16932908" sideWeight="0.21732523" order="1" side_tool="true" content_ui="tabs" />
@@ -258,7 +351,7 @@
     <option name="SHOW_ONLY_CHANGED_IN_SELECTION_DIFF" value="true" />
     <option name="CHECK_COMMIT_MESSAGE_SPELLING" value="true" />
     <option name="FORCE_NON_EMPTY_COMMENT" value="false" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added get_coords_from and exploded_points" />
+    <option name="LAST_COMMIT_MESSAGE" value="Aggiunta utils.py, sottomodulo con funzioni utili." />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
     <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="false" />
     <option name="CHECK_FILES_UP_TO_DATE_BEFORE_COMMIT" value="false" />
@@ -275,14 +368,49 @@
     <MESSAGE value="Added the facets." />
     <MESSAGE value="Added 3-dim solids." />
     <MESSAGE value="Added get_coords_from and exploded_points" />
+    <MESSAGE value="Aggiunto hexsphere2, la versione piu aggiornata del prof." />
+    <MESSAGE value="Aggiunta utils.py, sottomodulo con funzioni utili." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/hexsphere.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="136" column="4" selection-start="4448" selection-end="4448" vertical-scroll-proportion="0.023847377" />
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/hccsphere.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="216" column="73" selection-start="6768" selection-end="6768" vertical-scroll-proportion="0.6723301">
+        <state line="57" column="0" selection-start="1664" selection-end="1832" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="69" column="27" selection-start="1839" selection-end="1839" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hasselib/test9.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="47" column="4" selection-start="1588" selection-end="1641" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hasselib/graphLib6.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/hexsphere2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="225" column="29" selection-start="7660" selection-end="7660" vertical-scroll-proportion="0.4368932">
           <folding />
         </state>
       </provider>

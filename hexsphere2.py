@@ -188,18 +188,31 @@ def   hexSphere(g,scaling=2):
     # (d-1)-complex construction
     mapping = {}
 
+    #Compute the parallel edges
+    planes = [[0.707, 0.707, 0], [-0.707, 0.707, 0],
+              [1, 0, 0], [0, 1, 0]]
+    parallels_vtx = [parallels(g)(plane)[0:8] for plane in planes]
+
+    DRAW(g, [1.5, 1.5, 1.5])(CAT(parallels_vtx))
+
+    parallels_edges = CAT([parallel_edges(g)(cells) for cells in parallels_vtx])
+
+    DRAW(g, [1.5, 1.5, 1.5])(parallels_edges)
+
     #duplicate wall-complex
     for skeleton in wallComplex:
         
         #add 0-cells of mapped wall-complex cells
         for cell in skeleton:
-            
-            newCell = g.addNode(0)
-            mapping.update({cell:newCell})
-            point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
-            point = SCALARVECTPROD([UNITVECT(point),scaling])
-            g.setVecf(mapping[cell],Vecf([1]+point))
 
+            if cell in parallels_edges or cell in wallComplex[0]:
+                newCell = g.addNode(0)
+                mapping.update({cell:newCell})
+                point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
+                point = SCALARVECTPROD([UNITVECT(point),scaling])
+                g.setVecf(newCell,Vecf([1]+point))
+
+    DRAW(g, [1.5, 1.5, 1.5])()
 
     #add 1-cell extensions to top corners
     for node in wallComplex[0]:
@@ -208,6 +221,17 @@ def   hexSphere(g,scaling=2):
         g.addArch(node,newArc)
         g.addArch(newNode,newArc)
 
+    bComplex = boundaryComplex(g)
+    wallComplex = bComplex[:-1]
+    DRAW(g, [1.5, 1.5, 1.5])()
+
+    #add 1-cells of top-lateral boundary of added polytopes
+    for node in wallComplex[0]:
+        for arc in UPCELLS(g)(node):
+            if arc in wallComplex[1]:
+                newArc = g.addNode(1)
+                g.addArch(mapping[node],newArc)
+                g.addArch(mapping[arc],newArc)
     DRAW(g)()
 
 
@@ -223,9 +247,6 @@ if __name__=="__main__":
     myprint("CELLSPERLEVEL(g)(2)",CELLSPERLEVEL(g)(2))
     myprint("CELLSPERLEVEL(g)(3)",CELLSPERLEVEL(g)(3))
     DRAW(g,[1.5,1.5,1.5])()
-    #hexSphere(g)
+    hexSphere(g)
 
-    para = parallels(g)([0.707, 0.707, 0])
-    DRAW(g,[1.5,1.5,1.5])(para[0:6])
-    para = parallels(g)([-0.707, 0.707, 0])
-    DRAW(g,[1.5,1.5,1.5])(para[0:6])
+    DRAW(g,[1.5,1.5,1.5])()
