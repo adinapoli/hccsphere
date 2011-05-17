@@ -197,6 +197,7 @@ def   hexSphere(g,scaling=2):
 
     DRAW(g, [1.5, 1.5, 1.5])(meridian_edges)
 
+    newArcPairs = {}
     #duplicate wall-complex
     for skeleton in wallComplex:
         
@@ -204,6 +205,11 @@ def   hexSphere(g,scaling=2):
         for cell in skeleton:
 
             if cell in meridian_edges or cell in wallComplex[0]:
+
+                #Ugly repetition
+                if cell in meridian_edges:
+                    newArcPairs.update({cell: DOWNCELLS(g)(cell)})
+
                 newCell = g.addNode(0)
                 mapping.update({cell:newCell})
                 point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
@@ -221,14 +227,21 @@ def   hexSphere(g,scaling=2):
 
 
     #add 1-cells of top-lateral boundary of added polytopes
-    para = meridians(g)([0.707, 0.707, 0])
-    print para
-    DRAW(g)(para[0:8])
-    newBoundary0 = zip(para, para[1:] + [para[0]])
-    for pair in newBoundary0:
-        newArc = g.addNode(1)
-        g.addArch(pair[0],newArc)
-        g.addArch(pair[1],newArc)
+    for cell in meridian_edges:
+
+        #Get the top vertex the centroid is contained between
+        vtx = [mapping[c] for c in newArcPairs[cell]]
+
+        #Get the vertices to connect, something like this:
+        #[vtx1, roof-centroid], [roof-centroid, vtx2]
+        #roof-centroid is taken from the dict mapping, given
+        #an edge(cell)
+        pairs = zip(vtx, [mapping[cell]]*2)
+
+        for pair in pairs:
+            newArc = g.addNode(1)
+            g.addArch(pair[0],newArc)
+            g.addArch(pair[1],newArc)
     DRAW(g)()
 
 
