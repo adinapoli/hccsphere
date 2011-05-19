@@ -83,4 +83,16 @@ def meridians_edges(g):
 
         return edges
     return meridians_edges0
-  
+
+
+def polar_edges(g):
+
+    """Retrieves the edges that indice over the polar vertices"""
+    result = []
+    for cell in CELLSPERLEVEL(g)(1):
+        vertices = [get_coords_from(g)(v) for v in DOWNCELLS(g)(cell)]
+        for vtx in vertices:
+            if vtx[1] == 0 and vtx[2] == 0:
+                result.append(cell)
+
+    return result

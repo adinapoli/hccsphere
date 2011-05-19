@@ -213,7 +213,7 @@ def hexSphere(g,scaling=2):
                 newCell = g.addNode(0)
                 mapping.update({cell:newCell})
                 point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
-                point = SCALARVECTPROD([UNITVECT(point),scaling])
+                point = SCALARVECTPROD([point,scaling])
                 g.setVecf(newCell,Vecf([1.0]+point))
 
     DRAW(g, [1.5, 1.5, 1.5])()
@@ -251,14 +251,27 @@ def hexSphere(g,scaling=2):
             g.addArch(vtx[1],newArc)
 
 
-    for cell1 in meridian_edges:
-        for cell2 in meridian_edges:
-            inters = [val for val in UPCELLS(g)(cell1) if val in UPCELLS(g)(cell2)]
+    # In order to recognize the right pairs of centroids,
+    # we use this algorithm:
+    # 1. Iterate on every 2d cell (a facet)
+    # 2. Get the downcells of every cells, i.e. 4 edges
+    # 3. Computer the intersection as the filtering of the edges list
+    #    over the meridian edges
+    # 4. If a 2d cell has only and exactly 2 1d cells as boundary,
+    #    then we have found two right edges. Connect their centroids.
+    # With the function polar_edges we discriminate between edges inciding
+    # on a polar vertex or not, so we can connect only the non-polar centroids.
+    wallComplex = bComplex
+    polars = set(polar_edges(g))
+    for facet in wallComplex[2]:
 
-            if inters:
-                newArc = g.addNode(1)
-                g.addArch(mapping[cell1], newArc)
-                g.addArch(mapping[cell2], newArc)
+        edges = DOWNCELLS(g)(facet)
+        inter = filter(lambda x: x in meridian_edges, edges)
+
+        if len(inter) == 2 and not list(polars & set(inter)):
+            newArc = g.addNode(1)
+            g.addArch(mapping[inter[0]], newArc)
+            g.addArch(mapping[inter[1]], newArc)
             
     DRAW(g)()
 
