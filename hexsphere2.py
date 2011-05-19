@@ -249,6 +249,16 @@ def hexSphere(g,scaling=2):
             newArc = g.addNode(1)
             g.addArch(vtx[0],newArc)
             g.addArch(vtx[1],newArc)
+
+
+    for cell1 in meridian_edges:
+        for cell2 in meridian_edges:
+            inters = [val for val in UPCELLS(g)(cell1) if val in UPCELLS(g)(cell2)]
+
+            if inters:
+                newArc = g.addNode(1)
+                g.addArch(mapping[cell1], newArc)
+                g.addArch(mapping[cell2], newArc)
             
     DRAW(g)()
 
