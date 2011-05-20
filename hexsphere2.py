@@ -194,27 +194,31 @@ def hexSphere(g,scaling=2):
 
     meridian_vtx = [meridians(g)(plane)[0:10] for plane in planes]
     meridian_edges = CAT([meridians_edges(g)(cells) for cells in meridian_vtx])
+    parallel_edges = list(set(wallComplex[1]).difference(set(meridian_edges)))
 
     DRAW(g, [1.5, 1.5, 1.5])(meridian_edges)
 
-    newArcPairs = {}
+    meridians_edges2vtx = {}
+    parallels_edges2vtx = {}
+    
     #duplicate wall-complex
     for skeleton in wallComplex:
         
         #add 0-cells of mapped wall-complex cells
         for cell in skeleton:
 
-            if cell in meridian_edges or cell in wallComplex[0]:
+            if cell in parallel_edges:
+                parallels_edges2vtx.update({cell: DOWNCELLS(g)(cell)})
 
-                #Ugly repetition
-                if cell in meridian_edges:
-                    newArcPairs.update({cell: DOWNCELLS(g)(cell)})
+            if cell in meridian_edges:
+                meridians_edges2vtx.update({cell: DOWNCELLS(g)(cell)})
 
-                newCell = g.addNode(0)
-                mapping.update({cell:newCell})
-                point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
-                point = SCALARVECTPROD([point,scaling])
-                g.setVecf(newCell,Vecf([1.0]+point))
+
+            newCell = g.addNode(0)
+            mapping.update({cell:newCell})
+            point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
+            point = SCALARVECTPROD([UNITVECT(point),scaling])
+            g.setVecf(newCell,Vecf([1.0]+point))
 
     DRAW(g, [1.5, 1.5, 1.5])()
 
@@ -231,7 +235,7 @@ def hexSphere(g,scaling=2):
 
         if cell in meridian_edges:
             #Get the top vertex the centroid is contained between
-            vtx = [mapping[c] for c in newArcPairs[cell]]
+            vtx = [mapping[c] for c in meridians_edges2vtx[cell]]
 
             #Get the vertices to connect, something like this:
             #[vtx1, roof-centroid], [roof-centroid, vtx2]
@@ -245,10 +249,19 @@ def hexSphere(g,scaling=2):
                 g.addArch(pair[1],newArc)
 
         else:
-            vtx = [mapping[c] for c in DOWNCELLS(g)(cell)]
-            newArc = g.addNode(1)
-            g.addArch(vtx[0],newArc)
-            g.addArch(vtx[1],newArc)
+            #Get the top vertex the centroid is contained between
+            vtx = [mapping[c] for c in parallels_edges2vtx[cell]]
+
+            #Get the vertices to connect, something like this:
+            #[vtx1, roof-centroid], [roof-centroid, vtx2]
+            #roof-centroid is taken from the dict mapping, given
+            #an edge(cell)
+            pairs = zip(vtx, [mapping[cell]]*2)
+
+            for pair in pairs:
+                newArc = g.addNode(1)
+                g.addArch(pair[0],newArc)
+                g.addArch(pair[1],newArc)
 
 
     # In order to recognize the right pairs of centroids,
