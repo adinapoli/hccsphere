@@ -168,6 +168,133 @@ def initialSphere(g):
 #/////////////////////////////////////////////////////////////////////
 
 
+def hexSphere(g,scaling=1.2):
+
+    #/////////////////////////////////////////////////////////////////////
+    #   STEP 1:  d-1  boundary-complex extraction
+    #/////////////////////////////////////////////////////////////////////
+    bComplex = boundaryComplex(g)
+    n = g.getPointDim()
+    DRAW(g,[1.5,1.5,1.5])(CAT(bComplex))
+    
+
+    #/////////////////////////////////////////////////////////////////////
+    # STEP 2: d-2 wall-complex extraction 
+    #/////////////////////////////////////////////////////////////////////
+    wallComplex = bComplex[:-1]
+    DRAW(g,[1.5,1.5,1.5])(CAT(wallComplex))
+
+    # STEP 3: basket separators construction \\\\\\\\\\\\\\\\
+    # (d-1)-complex construction
+    mapping = {}
+
+    #Compute the parallel edges
+    planes = [[1/SQRT(2), 1/SQRT(2), 0], [-1/SQRT(2), 1/SQRT(2), 0],
+              [1, 0, 0], [0, 1, 0]]
+
+    meridian_vtx = [meridians(g)(plane)[0:10] for plane in planes]
+    meridian_edges = CAT([meridians_edges(g)(cells) for cells in meridian_vtx])
+    parallel_edges = list(set(wallComplex[1]).difference(set(meridian_edges)))
+
+    DRAW(g, [1.5, 1.5, 1.5])(meridian_edges)
+
+    meridians_edges2vtx = {}
+    parallels_edges2vtx = {}
+    
+    #duplicate wall-complex
+    for skeleton in wallComplex:
+        
+        #add 0-cells of mapped wall-complex cells
+        for cell in skeleton:
+
+            if cell in parallel_edges:
+                parallels_edges2vtx.update({cell: DOWNCELLS(g)(cell)})
+
+            if cell in meridian_edges:
+                meridians_edges2vtx.update({cell: DOWNCELLS(g)(cell)})
+
+
+            newCell = g.addNode(0)
+            mapping.update({cell:newCell})
+            point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
+            point = SCALARVECTPROD([UNITVECT(point),scaling])
+            g.setVecf(newCell,Vecf([1.0]+point))
+
+    DRAW(g, [1.5, 1.5, 1.5])()
+
+    #add 1-cell extensions to top corners
+    for node in wallComplex[0]:
+        newNode = mapping[node]
+        newArc = g.addNode(1)
+        g.addArch(node,newArc)
+        g.addArch(newNode,newArc)
+
+
+    #add 1-cells of top-lateral boundary of added polytopes
+    for cell in wallComplex[1]:
+
+        if cell in meridian_edges:
+            #Get the top vertex the centroid is contained between
+            vtx = [mapping[c] for c in meridians_edges2vtx[cell]]
+
+            #Get the vertices to connect, something like this:
+            #[vtx1, roof-centroid], [roof-centroid, vtx2]
+            #roof-centroid is taken from the dict mapping, given
+            #an edge(cell)
+            pairs = zip(vtx, [mapping[cell]]*2)
+
+            for pair in pairs:
+                newArc = g.addNode(1)
+                g.addArch(pair[0],newArc)
+                g.addArch(pair[1],newArc)
+
+        else:
+            #Get the top vertex the centroid is contained between
+            vtx = [mapping[c] for c in parallels_edges2vtx[cell]]
+
+            #Get the vertices to connect, something like this:
+            #[vtx1, roof-centroid], [roof-centroid, vtx2]
+            #roof-centroid is taken from the dict mapping, given
+            #an edge(cell)
+            pairs = zip(vtx, [mapping[cell]]*2)
+
+            for pair in pairs:
+                newArc = g.addNode(1)
+                g.addArch(pair[0],newArc)
+                g.addArch(pair[1],newArc)
+
+    DRAW(g)()
+
+    # In order to recognize the right pairs of centroids,
+    # we use this algorithm:
+    # 1. Iterate on every 2d cell (a facet)
+    # 1.1 Compute the centroid of the facet
+    # 2. Get the downcells of every cells, i.e. 4 edges
+    # 3. Computer the intersection as the filtering of the edges list
+    #    over the meridian edges
+    # 4. If a 2d cell has only and exactly 2 1d cells as boundary,
+    #    then we have found two right edges. Connect their centroids.
+    # With the function polar_edges we discriminate between edges inciding
+    # on a polar vertex or not, so we can connect only the non-polar centroids.
+    wallComplex = bComplex
+    polars = set(polar_edges(g))
+    facet2centroid = {}
+    for facet in wallComplex[2]:
+
+        point = [CENTROID(g)(facet).get(i) for i in range(1,n+1)]
+        point = SCALARVECTPROD([UNITVECT(point),scaling])
+        centroid = g.addNode(0); g.setVecf(centroid, Vecf([1.0]+point))
+        facet2centroid.update({facet: centroid})
+
+        edges = DOWNCELLS(g)(facet)
+
+        for edge in edges:
+            newArc = g.addNode(1)
+            g.addArch(mapping[edge], newArc)
+            g.addArch(centroid, newArc)
+            
+    DRAW(g)()
+
 
 #/////////////////////////////////////////////////////////////////////
 # Local testing 
