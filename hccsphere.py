@@ -176,10 +176,9 @@ def hexSphere(g,scaling=1.2):
     bComplex = boundaryComplex(g)
     n = g.getPointDim()
     DRAW(g,[1.5,1.5,1.5])(CAT(bComplex))
-    
 
     #/////////////////////////////////////////////////////////////////////
-    # STEP 2: d-2 wall-complex extraction 
+    # STEP 2: d-2 wall-complex extraction
     #/////////////////////////////////////////////////////////////////////
     wallComplex = bComplex[:-1]
     DRAW(g,[1.5,1.5,1.5])(CAT(wallComplex))
@@ -187,6 +186,7 @@ def hexSphere(g,scaling=1.2):
     # STEP 3: basket separators construction \\\\\\\\\\\\\\\\
     # (d-1)-complex construction
     mapping = {}
+    centroidMap = {}
 
     #Compute the parallel edges
     planes = [[1/SQRT(2), 1/SQRT(2), 0], [-1/SQRT(2), 1/SQRT(2), 0],
@@ -200,10 +200,10 @@ def hexSphere(g,scaling=1.2):
 
     meridians_edges2vtx = {}
     parallels_edges2vtx = {}
-    
+
     #duplicate wall-complex
     for skeleton in wallComplex:
-        
+
         #add 0-cells of mapped wall-complex cells
         for cell in skeleton:
 
@@ -213,12 +213,15 @@ def hexSphere(g,scaling=1.2):
             if cell in meridian_edges:
                 meridians_edges2vtx.update({cell: DOWNCELLS(g)(cell)})
 
-
-            newCell = g.addNode(0)
-            mapping.update({cell:newCell})
+            #conserva un mapping tra i centroidi degli spigoli ai livelli n-1 -> n
+            upperCell = g.addNode(0)
+            mapping.update({cell:upperCell})
             point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
-            point = SCALARVECTPROD([UNITVECT(point),scaling])
-            g.setVecf(newCell,Vecf([1.0]+point))
+
+            g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
+            lowerCell = g.addNode(0)
+            g.setVecf(lowerCell,Vecf([1.0]+point))
+            centroidMap.update({upperCell:lowerCell})
 
     DRAW(g, [1.5, 1.5, 1.5])()
 
@@ -228,7 +231,6 @@ def hexSphere(g,scaling=1.2):
         newArc = g.addNode(1)
         g.addArch(node,newArc)
         g.addArch(newNode,newArc)
-
 
     #add 1-cells of top-lateral boundary of added polytopes
     for cell in wallComplex[1]:
@@ -270,34 +272,46 @@ def hexSphere(g,scaling=1.2):
     # 1. Iterate on every 2d cell (a facet)
     # 1.1 Compute the centroid of the facet
     # 2. Get the downcells of every cells, i.e. 4 edges
-    # 3. Computer the intersection as the filtering of the edges list
-    #    over the meridian edges
-    # 4. If a 2d cell has only and exactly 2 1d cells as boundary,
-    #    then we have found two right edges. Connect their centroids.
-    # With the function polar_edges we discriminate between edges inciding
-    # on a polar vertex or not, so we can connect only the non-polar centroids.
+    # 3. Connect their centroids.
+    
     wallComplex = bComplex
-    polars = set(polar_edges(g))
     facet2centroid = {}
     for facet in wallComplex[2]:
 
+        #aggiunta alla centroidMap i centroidi delle facce
         point = [CENTROID(g)(facet).get(i) for i in range(1,n+1)]
-        point = SCALARVECTPROD([UNITVECT(point),scaling])
-        centroid = g.addNode(0); g.setVecf(centroid, Vecf([1.0]+point))
-        facet2centroid.update({facet: centroid})
-
+        upperCentroid = g.addNode(0)
+        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
+        facet2centroid.update({facet: upperCentroid})
+        lowerCentroid = g.addNode(0)
+        g.setVecf(lowerCentroid, Vecf([1.0]+point))
+        centroidMap.update({upperCentroid:lowerCentroid})
         edges = DOWNCELLS(g)(facet)
 
         for edge in edges:
             newArc = g.addNode(1)
             g.addArch(mapping[edge], newArc)
-            g.addArch(centroid, newArc)
-            
+            g.addArch(upperCentroid, newArc)
+
+        #Trying to connect the lower edges centroids to the central
+        #lower face centroid. We need first to get, given an upper
+        #edge its centroids, then go lower getting from centroidMap
+        #the lower centroids and we go.
+        for edge in edges:
+            newArc = g.addNode(1)
+            g.addArch(centroidMap[mapping[edge]], newArc)
+            g.addArch(lowerCentroid, newArc)
+
+    #connette i centroidi degli spigoli e delle facce
+    for upper,lower in centroidMap.iteritems():
+        newArc = g.addNode(1)
+        g.addArch(lower, newArc)
+        g.addArch(upper, newArc)
+
     DRAW(g)()
 
-
 #/////////////////////////////////////////////////////////////////////
-# Local testing 
+# Local testing
 #/////////////////////////////////////////////////////////////////////
 
 if __name__=="__main__":
