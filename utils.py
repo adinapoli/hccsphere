@@ -96,3 +96,15 @@ def polar_edges(g):
                 result.append(cell)
 
     return result
+
+def corners(g):
+    """Given a 2d-facet id, retrieves the four corner vertexes."""
+    def corners0(facet_id):
+        downcells = DOWNCELLS(g)(facet_id)
+
+        corners = []
+        for edge in downcells:
+            corners.extend(DOWNCELLS(g)(edge))
+
+        return unique(corners)
+    return corners0

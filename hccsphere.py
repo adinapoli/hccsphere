@@ -276,8 +276,34 @@ def hexSphere(g,scaling=1.2):
     
     wallComplex = bComplex
     facet2centroid = {}
+    upper2lower = {}
     for facet in wallComplex[2]:
 
+        #EXPERIMENTAL: Connette fra loro corner e lower-entroid. Deve
+        #gestire gli spigoli duplicati!!
+        l_corners_vtx = corners(g)(facet)
+        u_corner_vtx = [mapping[vtx] for vtx in l_corners_vtx]
+        upper_centroids = [mapping[edge] for edge in DOWNCELLS(g)(facet)]
+        lower_centroids = [centroidMap[edge] for edge in upper_centroids]
+
+        #Gestisce il mapping fra lo spigolo superiore <corner,centroid>
+        #e lo spigolo inferiore <corner,centroid>
+
+        for corner in u_corner_vtx:
+            for centroid in upper_centroids:
+                inters = GETINTERSECTION(g)([corner, centroid])
+
+                if inters and inters[0] not in upper2lower.keys():
+                    print inters[0]
+                    newArc = g.addNode(1)
+                    corner_idx = u_corner_vtx.index(corner)
+                    centroid_idx = upper_centroids.index(centroid)
+                    g.addArch(l_corners_vtx[corner_idx], newArc)
+                    g.addArch(lower_centroids[centroid_idx], newArc)
+                    upper2lower.update({inters[0]:newArc})
+
+        #END EXPERIMENTAL
+        
         #aggiunta alla centroidMap i centroidi delle facce
         point = [CENTROID(g)(facet).get(i) for i in range(1,n+1)]
         upperCentroid = g.addNode(0)
@@ -310,6 +336,49 @@ def hexSphere(g,scaling=1.2):
 
     DRAW(g)()
 
+    #/////////////////////////////////////////////////////////////////////
+    # STEP 3: d-2 and d-3 levels construction
+    #/////////////////////////////////////////////////////////////////////
+
+    # Per disegnare una faccia 2D ho bisogno di quattro spigoli.
+    # Chiamiamo lower-corners i vertici "angolo" della generica faccia 2D
+    # del livello n-1 su cui stiamo iterando.
+    # Chiamiamo lower-centroids i centroidi degli spigoli del livello
+    # n che stiamo costruendo
+    # Chiamiamo upper{corners, centroids} i vertici del sottolivello superiore
+    # ma sempre nel livello n che stiamo costruendo.
+    # Per ogni coppia (upper corner, upper centroid) ci chiediamo
+    # 1. Esiste uno ed un solo spigolo che li unisce?
+    # 2. Se si andiamo a trovare gli altri spigoli con dei giochi sui
+    # dizionari e connettiamo tutto.
+    
+    #Lista per gestire i duplicati
+    not_dup_edges = []
+    for facet in wallComplex[2]:
+
+        l_corners_vtx = corners(g)(facet)
+        u_corners_vtx = [mapping[vtx] for vtx in l_corners_vtx]
+        facet_edges = DOWNCELLS(g)(facet)
+        u_edges_centroids = [mapping[edge] for edge in facet_edges]
+
+        for corner in u_corners_vtx:
+            for centroid in u_edges_centroids:
+
+                e1 = GETINTERSECTION(g)([corner, centroid])
+                corner_idx = u_corners_vtx.index(corner)
+                e2 = GETINTERSECTION(g)([l_corners_vtx[corner_idx],
+                                             centroidMap[centroid]])
+                e3 = GETINTERSECTION(g)([corner, centroidMap[corner]])
+                e4 = GETINTERSECTION(g)([centroid, centroidMap[centroid]])
+
+                if len(e1) == len(e2) == len(e3) == len(e4) == 1:
+                    if e1 not in not_dup_edges:
+                        new_facet = g.addNode(2)
+                        g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
+                        g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
+                        not_dup_edges.append(e1)
+
+
 #/////////////////////////////////////////////////////////////////////
 # Local testing
 #/////////////////////////////////////////////////////////////////////
@@ -320,3 +389,4 @@ if __name__=="__main__":
     g = initialSphere(g)
     DRAW(g,[1.5,1.5,1.5])()
     hexSphere(g)
+    DRAW(g)()
