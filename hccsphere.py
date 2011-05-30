@@ -294,7 +294,6 @@ def hexSphere(g,scaling=1.2):
                 inters = GETINTERSECTION(g)([corner, centroid])
 
                 if inters and inters[0] not in upper2lower.keys():
-                    print inters[0]
                     newArc = g.addNode(1)
                     corner_idx = u_corner_vtx.index(corner)
                     centroid_idx = upper_centroids.index(centroid)
@@ -354,12 +353,14 @@ def hexSphere(g,scaling=1.2):
     
     #Lista per gestire i duplicati
     not_dup_edges = []
+    facet_count = 0
     for facet in wallComplex[2]:
 
         l_corners_vtx = corners(g)(facet)
         u_corners_vtx = [mapping[vtx] for vtx in l_corners_vtx]
         facet_edges = DOWNCELLS(g)(facet)
         u_edges_centroids = [mapping[edge] for edge in facet_edges]
+        l_edges_centroids = [centroidMap[vtx] for vtx in u_edges_centroids]
 
         for corner in u_corners_vtx:
             for centroid in u_edges_centroids:
@@ -377,6 +378,73 @@ def hexSphere(g,scaling=1.2):
                         g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
                         g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
                         not_dup_edges.append(e1)
+
+        #Adesso dobbiamo creare le facce "a croce", le 4 facce interne
+        #al basket.
+        upper_face_centroid = facet2centroid[facet]
+        lower_face_centroid = centroidMap[upper_face_centroid]
+
+        for centroid in u_edges_centroids:
+            e1 = GETINTERSECTION(g)([upper_face_centroid, centroid])
+            e2 = GETINTERSECTION(g)([centroid, centroidMap[centroid]])
+            e3 = GETINTERSECTION(g)([centroidMap[centroid],
+                                     lower_face_centroid])
+            e4 = GETINTERSECTION(g)([upper_face_centroid,
+                                     lower_face_centroid])
+
+            if len(e1) == len(e2) == len(e3) == len(e4) == 1: 
+                new_facet = g.addNode(2)
+                g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
+                g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
+
+
+        #Ora e' il turno delle quattro lower facets e degli upper
+        #Mi serve il prodotto cartesiano fra i lower centroid per poter
+        #iterare su coppie di centroid.
+
+        lower_centroids_cart = CART([l_edges_centroids, l_edges_centroids])
+        lower_centroids_cart = filter(lambda x: x[0] < x[1] and x[0] != x[1],
+                                      lower_centroids_cart)
+
+        for corner in l_corners_vtx:
+            for centroid_pair in lower_centroids_cart:
+
+                e1 = GETINTERSECTION(g)([corner, centroid_pair[0]])
+                e2 = GETINTERSECTION(g)([centroid_pair[0], lower_face_centroid])
+                e3 = GETINTERSECTION(g)([lower_face_centroid, centroid_pair[1]])
+                e4 = GETINTERSECTION(g)([centroid_pair[1], corner])
+
+                if len(e1) == len(e2) == len(e3) == len(e4) == 1:
+
+                    #Aggiungo una lower facet
+                    new_facet = g.addNode(2)
+                    g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
+                    g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
+
+                    #Se abbiamo trovato 4 spigoli buoni per le lower facet
+                    #allora andiamo a prendere pure i punti superiori per
+                    #disegnare direttamente le upper facet
+                    facet_count += 1
+                    upper_centroids_idx = l_edges_centroids.index(centroid_pair[0])
+                    e1 = GETINTERSECTION(g)([mapping[corner],
+                                             u_edges_centroids[upper_centroids_idx]])
+                    e2 = GETINTERSECTION(g)([u_edges_centroids[upper_centroids_idx],
+                                             upper_face_centroid])
+                    upper_centroids_idx = l_edges_centroids.index(centroid_pair[1])
+                    e3 = GETINTERSECTION(g)([u_edges_centroids[upper_centroids_idx],
+                                             upper_face_centroid])
+                    e4 = GETINTERSECTION(g)([mapping[corner],
+                                             u_edges_centroids[upper_centroids_idx]])
+
+                    new_facet = g.addNode(2)
+                    g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
+                    g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
+
+
+        #Ora e' il turno dei cubi gialli, per cui abbiamo bisogno di
+        # 8 vertici
+
+    assert(facet_count == len(wallComplex[2])*4)
 
 
 #/////////////////////////////////////////////////////////////////////
