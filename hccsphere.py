@@ -218,7 +218,7 @@ def hexSphere(g,scaling=1.2):
             mapping.update({cell:upperCell})
             point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
 
-            g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
+            g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([point,scaling])))
             lowerCell = g.addNode(0)
             g.setVecf(lowerCell,Vecf([1.0]+point))
             centroidMap.update({upperCell:lowerCell})
@@ -306,7 +306,7 @@ def hexSphere(g,scaling=1.2):
         #aggiunta alla centroidMap i centroidi delle facce
         point = [CENTROID(g)(facet).get(i) for i in range(1,n+1)]
         upperCentroid = g.addNode(0)
-        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
+        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([point,scaling])))
         facet2centroid.update({facet: upperCentroid})
         lowerCentroid = g.addNode(0)
         g.setVecf(lowerCentroid, Vecf([1.0]+point))
@@ -443,6 +443,41 @@ def hexSphere(g,scaling=1.2):
 
         #Ora e' il turno dei cubi gialli, per cui abbiamo bisogno di
         # 8 vertici
+        # uf = Upper face
+        # lf = Lower face
+        # l1 = lateral 1
+        # l2 = lateral 2
+        # l3 = lateral 3
+        # l4 = lateral 4
+        upper_centroids_cart = CART([u_edges_centroids, u_edges_centroids])
+        upper_centroids_cart = filter(lambda x: x[0] < x[1] and x[0] != x[1],
+                                      upper_centroids_cart)
+        
+        for centroid_pair in upper_centroids_cart:
+            common_corner = get_corner_from(g)(centroid_pair)
+
+            if common_corner:
+                corner_idx = u_corners_vtx.index(common_corner[0])
+                uf = [upper_face_centroid, common_corner[0], centroid_pair[0],
+                      centroid_pair[1]]
+                lf = [lower_face_centroid, l_corners_vtx[corner_idx],
+                      centroidMap[centroid_pair[0]], centroidMap[centroid_pair[1]]]
+                l1 = [lower_face_centroid, upper_face_centroid, centroid_pair[0],
+                      centroidMap[centroid_pair[0]]]
+                l2 = [lower_face_centroid, upper_face_centroid, centroid_pair[1],
+                      centroidMap[centroid_pair[1]]]
+                l3 = [centroid_pair[0], centroidMap[centroid_pair[0]],
+                      common_corner[0], l_corners_vtx[corner_idx]]
+                l4 = [centroid_pair[1], centroidMap[centroid_pair[1]],
+                      common_corner[0], l_corners_vtx[corner_idx]]
+
+                list_set = [uf, lf, l1, l2, l3, l4]
+                faces = [get_facet_from(g)(l) for l in list_set]
+
+                verts = CAT(list_set)
+                node = g.addNode(3)
+                for vert in verts: g.addArch(node,vert)
+                for face in faces: g.addArch(face,node)
 
     assert(facet_count == len(wallComplex[2])*4)
 
@@ -457,4 +492,4 @@ if __name__=="__main__":
     g = initialSphere(g)
     DRAW(g,[1.5,1.5,1.5])()
     hexSphere(g)
-    DRAW(g)()
+    DRAW(g, [2.0, 2.0, 2.0])()
