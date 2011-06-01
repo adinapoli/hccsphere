@@ -187,19 +187,7 @@ def hexSphere(g,scaling=1.2):
     # (d-1)-complex construction
     mapping = {}
     centroidMap = {}
-
-    #Compute the parallel edges
-    planes = [[1/SQRT(2), 1/SQRT(2), 0], [-1/SQRT(2), 1/SQRT(2), 0],
-              [1, 0, 0], [0, 1, 0]]
-
-    meridian_vtx = [meridians(g)(plane)[0:10] for plane in planes]
-    meridian_edges = CAT([meridians_edges(g)(cells) for cells in meridian_vtx])
-    parallel_edges = list(set(wallComplex[1]).difference(set(meridian_edges)))
-
-    DRAW(g, [1.5, 1.5, 1.5])(meridian_edges)
-
-    meridians_edges2vtx = {}
-    parallels_edges2vtx = {}
+    edges2downcells = {}
 
     #duplicate wall-complex
     for skeleton in wallComplex:
@@ -207,11 +195,8 @@ def hexSphere(g,scaling=1.2):
         #add 0-cells of mapped wall-complex cells
         for cell in skeleton:
 
-            if cell in parallel_edges:
-                parallels_edges2vtx.update({cell: DOWNCELLS(g)(cell)})
-
-            if cell in meridian_edges:
-                meridians_edges2vtx.update({cell: DOWNCELLS(g)(cell)})
+            #Conserva un mapping fra gli spigoli e le downcells
+            edges2downcells.update({cell: DOWNCELLS(g)(cell)})
 
             #conserva un mapping tra i centroidi degli spigoli ai livelli n-1 -> n
             upperCell = g.addNode(0)
@@ -235,35 +220,19 @@ def hexSphere(g,scaling=1.2):
     #add 1-cells of top-lateral boundary of added polytopes
     for cell in wallComplex[1]:
 
-        if cell in meridian_edges:
-            #Get the top vertex the centroid is contained between
-            vtx = [mapping[c] for c in meridians_edges2vtx[cell]]
+        #Get the top vertex the centroid is contained between
+        vtx = [mapping[c] for c in edges2downcells[cell]]
 
-            #Get the vertices to connect, something like this:
-            #[vtx1, roof-centroid], [roof-centroid, vtx2]
-            #roof-centroid is taken from the dict mapping, given
-            #an edge(cell)
-            pairs = zip(vtx, [mapping[cell]]*2)
+        #Get the vertices to connect, something like this:
+        #[vtx1, roof-centroid], [roof-centroid, vtx2]
+        #roof-centroid is taken from the dict mapping, given
+        #an edge(cell)
+        pairs = zip(vtx, [mapping[cell]]*2)
 
-            for pair in pairs:
-                newArc = g.addNode(1)
-                g.addArch(pair[0],newArc)
-                g.addArch(pair[1],newArc)
-
-        else:
-            #Get the top vertex the centroid is contained between
-            vtx = [mapping[c] for c in parallels_edges2vtx[cell]]
-
-            #Get the vertices to connect, something like this:
-            #[vtx1, roof-centroid], [roof-centroid, vtx2]
-            #roof-centroid is taken from the dict mapping, given
-            #an edge(cell)
-            pairs = zip(vtx, [mapping[cell]]*2)
-
-            for pair in pairs:
-                newArc = g.addNode(1)
-                g.addArch(pair[0],newArc)
-                g.addArch(pair[1],newArc)
+        for pair in pairs:
+            newArc = g.addNode(1)
+            g.addArch(pair[0],newArc)
+            g.addArch(pair[1],newArc)
 
     DRAW(g)()
 
@@ -493,3 +462,11 @@ if __name__=="__main__":
     DRAW(g,[1.5,1.5,1.5])()
     g = hexSphere(g)
     DRAW(g, [2.0, 2.0, 2.0])()
+
+
+    #Attenzione! per estrarre correttamente il bordo al passo
+    #successivo e' necessario disegnare PRIMA spigoli e vertici LOWER,
+    #e poi gli UPPER
+    bComplex = boundaryComplex(g)
+    wallComplex = bComplex
+    DRAW(g,[1.5,1.5,1.5])(CAT(wallComplex))

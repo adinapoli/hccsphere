@@ -116,16 +116,17 @@ def get_facet_from(g):
         pairs = filter(lambda x: x[0] < x[1] and x[0] != x[1], pairs)
         inters = CAT(unique([GETINTERSECTION(g)(p) for p in pairs]))
         upcells = CAT([UPCELLS(g)(i) for i in inters])
-        print upcells
         result = filter(lambda x: upcells.count(x) >= 3, upcells)[0]
         return result
     return get_facet_from0
 
 
+#Attenzione, deve ritornare una lista di 1 solo elemento!
 def get_corner_from(g):
     def get_corner_from0(id_list):
         edges = CAT([UPCELLS(g)(v) for v in id_list])
+        edges = filter(lambda x: g.Level(x) == 1, edges)
         vtxes = CAT([DOWNCELLS(g)(e) for e in edges])
         result = filter(lambda x: vtxes.count(x) == 2, vtxes)
-        return result
+        return [result[0]]
     return get_corner_from0
