@@ -207,7 +207,7 @@ def impose_layer(g,scaling=1.2):
                 upperCorner = g.addNode(0)
                 cornersLow2Up.update({vtx:upperCorner})
                 point = get_coords_from(g)(vtx)[1:]
-                g.setVecf(upperCorner,Vecf([1.0]+SCALARVECTPROD([point,scaling])))
+                g.setVecf(upperCorner,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
 
                 upper2lower.update({upperCorner:vtx})
                 #Connessione tra i corner
@@ -232,7 +232,7 @@ def impose_layer(g,scaling=1.2):
                 edge2UpCentroid.update({edge: upperCell})
                 point = [CENTROID(g)(edge).get(i) for i in range(1,n+1)]
 
-                g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([point,scaling])))
+                g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
                 lowerCell = g.addNode(0)
                 edge2LwCentroid.update({edge: lowerCell})
                 g.setVecf(lowerCell,Vecf([1.0]+point))
@@ -265,7 +265,7 @@ def impose_layer(g,scaling=1.2):
         point = [CENTROID(g)(facet).get(i) for i in range(1,n+1)]
         upperCentroid = g.addNode(0)
 
-        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([point,scaling])))
+        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
         facet2UpCentroid.update({facet: upperCentroid})
 
         lowerCentroid = g.addNode(0)
@@ -460,8 +460,9 @@ def hexsphere(layers = 5, scaling = 1.2):
 if __name__=="__main__":
 
     start = time.clock()
-    g = hexsphere(4, 1.2)
-    DRAW(g)()
+    g = hexsphere(2, 1.2)
+    DRAW(g, [2.0, 2.0, 2.0])()
     end = time.clock()
 
     print "Sphere builded in ", end - start, " seconds."
+    VIEW(Hpc(g))
