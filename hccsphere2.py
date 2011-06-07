@@ -171,12 +171,13 @@ def initialSphere(g):
 
 CURRENT_EXTERNAL_FACETS = []
 
-def impose_layer(g,scaling=1.2):
+def impose_layer(g, layer = 1, scaling=1.2):
 
+    global CURRENT_EXTERNAL_FACETS
     #/////////////////////////////////////////////////////////////////////
     #   STEP 1: boundary-complex extraction
     #/////////////////////////////////////////////////////////////////////
-    wallComplex = boundaryComplex(g)
+    wallComplex = boundaryComplex(g, CURRENT_EXTERNAL_FACETS)
     n = g.getPointDim()
 
     #/////////////////////////////////////////////////////////////////////
@@ -207,7 +208,7 @@ def impose_layer(g,scaling=1.2):
                 upperCorner = g.addNode(0)
                 cornersLow2Up.update({vtx:upperCorner})
                 point = get_coords_from(g)(vtx)[1:]
-                g.setVecf(upperCorner,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
+                g.setVecf(upperCorner,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling*layer])))
 
                 upper2lower.update({upperCorner:vtx})
                 #Connessione tra i corner
@@ -231,8 +232,8 @@ def impose_layer(g,scaling=1.2):
                 upperCell = g.addNode(0)
                 edge2UpCentroid.update({edge: upperCell})
                 point = [CENTROID(g)(edge).get(i) for i in range(1,n+1)]
+                g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling*layer])))
 
-                g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
                 lowerCell = g.addNode(0)
                 edge2LwCentroid.update({edge: lowerCell})
                 g.setVecf(lowerCell,Vecf([1.0]+point))
@@ -265,7 +266,7 @@ def impose_layer(g,scaling=1.2):
         point = [CENTROID(g)(facet).get(i) for i in range(1,n+1)]
         upperCentroid = g.addNode(0)
 
-        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling])))
+        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling*layer])))
         facet2UpCentroid.update({facet: upperCentroid})
 
         lowerCentroid = g.addNode(0)
@@ -294,6 +295,7 @@ def impose_layer(g,scaling=1.2):
             g.addArch(c, newArc)
 
 
+    CURRENT_EXTERNAL_FACETS = []
     #/////////////////////////////////////////////////////////////////////
     # STEP 3: d-2 and d-3 levels construction
     #/////////////////////////////////////////////////////////////////////
@@ -446,9 +448,8 @@ def hexsphere(layers = 5, scaling = 1.2):
     g = Graph(3)
     g = initialSphere(g)
 
-    for i in range(0,layers):
-        CURRENT_EXTERNAL_FACETS = []
-        g = impose_layer(g, scaling)
+    for i in range(1,layers+1):
+        g = impose_layer(g, i, scaling)
 
     return g
 
