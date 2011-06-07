@@ -1,7 +1,6 @@
 """ To generate the initial approximation of the sphere with hexahedra """
 
 import numpy as np
-from hasselib.graphLib6 import *
 from utils import *
 
 #/////////////////////////////////////////////////////////////////////

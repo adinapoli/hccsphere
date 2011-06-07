@@ -1,8 +1,8 @@
 """ To generate the initial approximation of the sphere with hexahedra """
 
 import numpy as np
-from hasselib.graphLib6 import *
 from utils import *
+import time
 
 #/////////////////////////////////////////////////////////////////////
 # Utility functions 
@@ -48,18 +48,20 @@ def classifyVerts(g):
                 continue
     return vclass
 
-def signature(vert):
-    point = eval(str(g.getVecf(vert)))[1:]
-    ret = []
-    for x in point: ret += [SIGN(x) if x!=0 else 0]
-    return ret
+def signature(g):
+    def signature0(vert):
+        point = eval(str(g.getVecf(vert)))[1:]
+        ret = []
+        for x in point: ret += [SIGN(x) if x!=0 else 0]
+        return ret
+    return signature0
 
-def test(v,w): 
-    return INNERPROD([signature(v),signature(w)])
+def test(g,v,w):
+    return INNERPROD([signature(g)(v),signature(g)(w)])
 
-def matching(vclass1,signtr):		
+def matching(g,vclass1,signtr):
     return [v for v in vclass1 if len([k for k in range(3)
-        if signature(v)[k]==signtr[k]]) == 2]
+        if signature(g)(v)[k]==signtr[k]]) == 2]
 
 def cyclicPairs(seq):
     return TRANS([seq,seq[1:]+[seq[0]]])
@@ -107,8 +109,8 @@ def initialSphere(g):
     # generation of edge nodes
 
     edges = [[v,vclass[3][0]] for v in vclass[2]]
-    edges += CAT([DISTL([v,[w for w in vclass[2] if test(v,w)==1]]) for v in vclass[1]])
-    edges += CAT([DISTL([v,[w for w in vclass[1] if test(v,w)==2]]) for v in vclass[0]])
+    edges += CAT([DISTL([v,[w for w in vclass[2] if test(g,v,w)==1]]) for v in vclass[1]])
+    edges += CAT([DISTL([v,[w for w in vclass[1] if test(g,v,w)==2]]) for v in vclass[0]])
 
     for edge in edges:
          node = g.addNode(1); g.addArch(edge[0],node);g.addArch(edge[1],node)
@@ -120,16 +122,16 @@ def initialSphere(g):
 
     for v in vclass[1]:
         for [u,w] in CART([vclass[2],vclass[2]]):
-            if u<w and VECTSUM([ signature(u),signature(w) ])==signature(v):
+            if u<w and VECTSUM([ signature(g)(u),signature(g)(w) ])==signature(g)(v):
                 faces += [CAT(AA(GETINTERSECTION(g))([[v,u],[v,w],[o,u],[o,w]]))]
 
     for vert in vclass[0]:
-        u,v,w = matching(vclass[1],signature(vert))
+        u,v,w = matching(g,vclass[1],signature(g)(vert))
         vertTriples = [[u,v,vert],[v,w,vert],[w,u,vert]]
         for k in range(3):
-            signatures = AA(signature)(vertTriples[k])
+            signatures = AA(signature(g))(vertTriples[k])
             common = COMP([AA(PROD),TRANS])(signatures)
-            w = [v for v in vclass[2] if signature(v) == common]+vertTriples[k]
+            w = [v for v in vclass[2] if signature(g)(v) == common]+vertTriples[k]
             faceEdgeVertices = [[w[0],w[1]],[w[0],w[2]],[w[1],w[3]],[w[2],w[3]]]
             faceEdges = CAT(AA(GETINTERSECTION(g))(faceEdgeVertices))
             faces += [faceEdges]
@@ -167,142 +169,130 @@ def initialSphere(g):
 # Layered sphere 
 #/////////////////////////////////////////////////////////////////////
 
+CURRENT_EXTERNAL_FACETS = []
 
-def hexSphere(g,scaling=1.2):
+def impose_layer(g,scaling=1.2):
 
     #/////////////////////////////////////////////////////////////////////
-    #   STEP 1:  d-1  boundary-complex extraction
+    #   STEP 1: boundary-complex extraction
     #/////////////////////////////////////////////////////////////////////
-    bComplex = boundaryComplex(g)
+    wallComplex = boundaryComplex(g)
     n = g.getPointDim()
-    DRAW(g,[1.5,1.5,1.5])(CAT(bComplex))
 
     #/////////////////////////////////////////////////////////////////////
-    # STEP 2: d-2 wall-complex extraction
+    # STEP 2: iterations over 2d facets
     #/////////////////////////////////////////////////////////////////////
-    wallComplex = bComplex[:-1]
-    DRAW(g,[1.5,1.5,1.5])(CAT(wallComplex))
 
-    # STEP 3: basket separators construction \\\\\\\\\\\\\\\\
-    # (d-1)-complex construction
-    mapping = {}
-    centroidMap = {}
+    edge2UpCentroid = {}
+    edge2LwCentroid = {}
+    #centroidMap = {}
     edges2downcells = {}
-
-    #duplicate wall-complex
-    for skeleton in wallComplex:
-
-        #add 0-cells of mapped wall-complex cells
-        for cell in skeleton:
-
-            #Conserva un mapping fra gli spigoli e le downcells
-            edges2downcells.update({cell: DOWNCELLS(g)(cell)})
-
-            #conserva un mapping tra i centroidi degli spigoli ai livelli n-1 -> n
-            upperCell = g.addNode(0)
-            mapping.update({cell:upperCell})
-            point = [CENTROID(g)(cell).get(i) for i in range(1,n+1)]
-
-            g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([point,scaling])))
-            lowerCell = g.addNode(0)
-            g.setVecf(lowerCell,Vecf([1.0]+point))
-            centroidMap.update({upperCell:lowerCell})
-
-    DRAW(g, [1.5, 1.5, 1.5])()
-
-    #add 1-cell extensions to top corners
-    for node in wallComplex[0]:
-        newNode = mapping[node]
-        newArc = g.addNode(1)
-        g.addArch(node,newArc)
-        g.addArch(newNode,newArc)
-
-    #add 1-cells of top-lateral boundary of added polytopes
-    for cell in wallComplex[1]:
-
-        #Get the top vertex the centroid is contained between
-        vtx = [mapping[c] for c in edges2downcells[cell]]
-
-        #Get the vertices to connect, something like this:
-        #[vtx1, roof-centroid], [roof-centroid, vtx2]
-        #roof-centroid is taken from the dict mapping, given
-        #an edge(cell)
-        pairs = zip(vtx, [mapping[cell]]*2)
-
-        for pair in pairs:
-            newArc = g.addNode(1)
-            g.addArch(pair[0],newArc)
-            g.addArch(pair[1],newArc)
-
-    DRAW(g)()
-
-    # In order to recognize the right pairs of centroids,
-    # we use this algorithm:
-    # 1. Iterate on every 2d cell (a facet)
-    # 1.1 Compute the centroid of the facet
-    # 2. Get the downcells of every cells, i.e. 4 edges
-    # 3. Connect their centroids.
-    
-    wallComplex = bComplex
-    facet2centroid = {}
+    cornersLow2Up = {}
+    facet2UpCentroid = {}
+    facet2LwCentroid = {}
     upper2lower = {}
+
     for facet in wallComplex[2]:
 
-        #EXPERIMENTAL: Connette fra loro corner e lower-entroid. Deve
-        #gestire gli spigoli duplicati!!
-        l_corners_vtx = corners(g)(facet)
-        u_corner_vtx = [mapping[vtx] for vtx in l_corners_vtx]
-        upper_centroids = [mapping[edge] for edge in DOWNCELLS(g)(facet)]
-        lower_centroids = [centroidMap[edge] for edge in upper_centroids]
+        #/////////////////////////////////////////////////////////////////////
+        # STEP 2.1: vertices creation
+        #/////////////////////////////////////////////////////////////////////
 
-        #Gestisce il mapping fra lo spigolo superiore <corner,centroid>
-        #e lo spigolo inferiore <corner,centroid>
+        #Per prima cosa estrudo i corner
+        corners_vtx = corners(g)(facet)
 
-        for corner in u_corner_vtx:
-            for centroid in upper_centroids:
-                inters = GETINTERSECTION(g)([corner, centroid])
+        for vtx in corners_vtx:
+            if vtx not in cornersLow2Up.keys():
 
-                if inters and inters[0] not in upper2lower.keys():
+                upperCorner = g.addNode(0)
+                cornersLow2Up.update({vtx:upperCorner})
+                point = get_coords_from(g)(vtx)[1:]
+                g.setVecf(upperCorner,Vecf([1.0]+SCALARVECTPROD([point,scaling])))
+
+                upper2lower.update({upperCorner:vtx})
+                #Connessione tra i corner
+                newArc = g.addNode(1)
+                g.addArch(vtx,newArc)
+                g.addArch(upperCorner,newArc)
+
+
+        #Ora creo i centroidi
+        facet_edges = DOWNCELLS(g)(facet)
+
+        for edge in facet_edges:
+
+            #Gestione duplicati
+            if edge not in edges2downcells.keys():
+                #Conserva un mapping fra gli spigoli e le downcells
+                edges2downcells.update({edge: DOWNCELLS(g)(edge)})
+
+                #Conserva un mapping tra i centroidi degli spigoli
+                #ai livelli n-1 -> n
+                upperCell = g.addNode(0)
+                edge2UpCentroid.update({edge: upperCell})
+                point = [CENTROID(g)(edge).get(i) for i in range(1,n+1)]
+
+                g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([point,scaling])))
+                lowerCell = g.addNode(0)
+                edge2LwCentroid.update({edge: lowerCell})
+                g.setVecf(lowerCell,Vecf([1.0]+point))
+
+                upper2lower.update({upperCell:lowerCell})
+                #connessione fra upper e lower
+                newArc = g.addNode(1)
+                g.addArch(upperCell,newArc)
+                g.addArch(lowerCell,newArc)
+
+                #Grazie al mapping edge-downcells so quali sono le downcells
+                #e quindi i corner! Posso creare subito gli edge che collegano
+                #i corner ai centroidi!
+                corn = edges2downcells[edge]
+
+                #Creo gli spigoli che collegano i lower corner con il
+                #lower centroid
+                for corner in corn:
                     newArc = g.addNode(1)
-                    corner_idx = u_corner_vtx.index(corner)
-                    centroid_idx = upper_centroids.index(centroid)
-                    g.addArch(l_corners_vtx[corner_idx], newArc)
-                    g.addArch(lower_centroids[centroid_idx], newArc)
-                    upper2lower.update({inters[0]:newArc})
+                    g.addArch(lowerCell, newArc)
+                    g.addArch(corner, newArc)
 
-        #END EXPERIMENTAL
-        
-        #aggiunta alla centroidMap i centroidi delle facce
+                for corner in corn:
+                    newArc = g.addNode(1)
+                    g.addArch(cornersLow2Up[corner], newArc)
+                    g.addArch(upperCell, newArc)
+
+
+        #Infine e' il turno dei centroidi delle facce 2d
         point = [CENTROID(g)(facet).get(i) for i in range(1,n+1)]
         upperCentroid = g.addNode(0)
+
         g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([point,scaling])))
-        facet2centroid.update({facet: upperCentroid})
+        facet2UpCentroid.update({facet: upperCentroid})
+
         lowerCentroid = g.addNode(0)
         g.setVecf(lowerCentroid, Vecf([1.0]+point))
-        centroidMap.update({upperCentroid:lowerCentroid})
-        edges = DOWNCELLS(g)(facet)
+        facet2LwCentroid.update({facet: lowerCentroid})
 
-        for edge in edges:
-            newArc = g.addNode(1)
-            g.addArch(mapping[edge], newArc)
-            g.addArch(upperCentroid, newArc)
-
-        #Trying to connect the lower edges centroids to the central
-        #lower face centroid. We need first to get, given an upper
-        #edge its centroids, then go lower getting from centroidMap
-        #the lower centroids and we go.
-        for edge in edges:
-            newArc = g.addNode(1)
-            g.addArch(centroidMap[mapping[edge]], newArc)
-            g.addArch(lowerCentroid, newArc)
-
-    #connette i centroidi degli spigoli e delle facce
-    for upper,lower in centroidMap.iteritems():
+        upper2lower.update({upperCentroid:lowerCentroid})
+        #connessione upper-lower
         newArc = g.addNode(1)
-        g.addArch(lower, newArc)
-        g.addArch(upper, newArc)
+        g.addArch(upperCentroid,newArc)
+        g.addArch(lowerCentroid,newArc)
 
-    DRAW(g)()
+        #Connetto subito i centroidi delle facce 2d ai centroidi, sia
+        #lower che upper!
+
+        u_centroid_list = [edge2UpCentroid[e] for e in facet_edges]
+        for c in u_centroid_list:
+            newArc = g.addNode(1)
+            g.addArch(upperCentroid, newArc)
+            g.addArch(c, newArc)
+
+        l_centroid_list = [edge2LwCentroid[e] for e in facet_edges]
+        for c in l_centroid_list:
+            newArc = g.addNode(1)
+            g.addArch(lowerCentroid, newArc)
+            g.addArch(c, newArc)
+
 
     #/////////////////////////////////////////////////////////////////////
     # STEP 3: d-2 and d-3 levels construction
@@ -326,10 +316,10 @@ def hexSphere(g,scaling=1.2):
     for facet in wallComplex[2]:
 
         l_corners_vtx = corners(g)(facet)
-        u_corners_vtx = [mapping[vtx] for vtx in l_corners_vtx]
+        u_corners_vtx = [cornersLow2Up[vtx] for vtx in l_corners_vtx]
         facet_edges = DOWNCELLS(g)(facet)
-        u_edges_centroids = [mapping[edge] for edge in facet_edges]
-        l_edges_centroids = [centroidMap[vtx] for vtx in u_edges_centroids]
+        u_edges_centroids = [edge2UpCentroid[edge] for edge in facet_edges]
+        l_edges_centroids = [upper2lower[vtx] for vtx in u_edges_centroids]
 
         for corner in u_corners_vtx:
             for centroid in u_edges_centroids:
@@ -337,9 +327,9 @@ def hexSphere(g,scaling=1.2):
                 e1 = GETINTERSECTION(g)([corner, centroid])
                 corner_idx = u_corners_vtx.index(corner)
                 e2 = GETINTERSECTION(g)([l_corners_vtx[corner_idx],
-                                             centroidMap[centroid]])
-                e3 = GETINTERSECTION(g)([corner, centroidMap[corner]])
-                e4 = GETINTERSECTION(g)([centroid, centroidMap[centroid]])
+                                             upper2lower[centroid]])
+                e3 = GETINTERSECTION(g)([corner, upper2lower[corner]])
+                e4 = GETINTERSECTION(g)([centroid, upper2lower[centroid]])
 
                 if len(e1) == len(e2) == len(e3) == len(e4) == 1:
                     if e1 not in not_dup_edges:
@@ -350,13 +340,13 @@ def hexSphere(g,scaling=1.2):
 
         #Adesso dobbiamo creare le facce "a croce", le 4 facce interne
         #al basket.
-        upper_face_centroid = facet2centroid[facet]
-        lower_face_centroid = centroidMap[upper_face_centroid]
+        upper_face_centroid = facet2UpCentroid[facet]
+        lower_face_centroid = upper2lower[upper_face_centroid]
 
         for centroid in u_edges_centroids:
             e1 = GETINTERSECTION(g)([upper_face_centroid, centroid])
-            e2 = GETINTERSECTION(g)([centroid, centroidMap[centroid]])
-            e3 = GETINTERSECTION(g)([centroidMap[centroid],
+            e2 = GETINTERSECTION(g)([centroid, upper2lower[centroid]])
+            e3 = GETINTERSECTION(g)([upper2lower[centroid],
                                      lower_face_centroid])
             e4 = GETINTERSECTION(g)([upper_face_centroid,
                                      lower_face_centroid])
@@ -395,17 +385,18 @@ def hexSphere(g,scaling=1.2):
                     #disegnare direttamente le upper facet
                     facet_count += 1
                     upper_centroids_idx = l_edges_centroids.index(centroid_pair[0])
-                    e1 = GETINTERSECTION(g)([mapping[corner],
+                    e1 = GETINTERSECTION(g)([cornersLow2Up[corner],
                                              u_edges_centroids[upper_centroids_idx]])
                     e2 = GETINTERSECTION(g)([u_edges_centroids[upper_centroids_idx],
                                              upper_face_centroid])
                     upper_centroids_idx = l_edges_centroids.index(centroid_pair[1])
                     e3 = GETINTERSECTION(g)([u_edges_centroids[upper_centroids_idx],
                                              upper_face_centroid])
-                    e4 = GETINTERSECTION(g)([mapping[corner],
+                    e4 = GETINTERSECTION(g)([cornersLow2Up[corner],
                                              u_edges_centroids[upper_centroids_idx]])
 
                     new_facet = g.addNode(2)
+                    CURRENT_EXTERNAL_FACETS.append(new_facet)
                     g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
                     g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
 
@@ -421,7 +412,7 @@ def hexSphere(g,scaling=1.2):
         upper_centroids_cart = CART([u_edges_centroids, u_edges_centroids])
         upper_centroids_cart = filter(lambda x: x[0] < x[1] and x[0] != x[1],
                                       upper_centroids_cart)
-        
+
         for centroid_pair in upper_centroids_cart:
             common_corner = get_corner_from(g)(centroid_pair)
 
@@ -430,14 +421,14 @@ def hexSphere(g,scaling=1.2):
                 uf = [upper_face_centroid, common_corner[0], centroid_pair[0],
                       centroid_pair[1]]
                 lf = [lower_face_centroid, l_corners_vtx[corner_idx],
-                      centroidMap[centroid_pair[0]], centroidMap[centroid_pair[1]]]
+                      upper2lower[centroid_pair[0]], upper2lower[centroid_pair[1]]]
                 l1 = [lower_face_centroid, upper_face_centroid, centroid_pair[0],
-                      centroidMap[centroid_pair[0]]]
+                      upper2lower[centroid_pair[0]]]
                 l2 = [lower_face_centroid, upper_face_centroid, centroid_pair[1],
-                      centroidMap[centroid_pair[1]]]
-                l3 = [centroid_pair[0], centroidMap[centroid_pair[0]],
+                      upper2lower[centroid_pair[1]]]
+                l3 = [centroid_pair[0], upper2lower[centroid_pair[0]],
                       common_corner[0], l_corners_vtx[corner_idx]]
-                l4 = [centroid_pair[1], centroidMap[centroid_pair[1]],
+                l4 = [centroid_pair[1], upper2lower[centroid_pair[1]],
                       common_corner[0], l_corners_vtx[corner_idx]]
 
                 list_set = [uf, lf, l1, l2, l3, l4]
@@ -451,22 +442,26 @@ def hexSphere(g,scaling=1.2):
     return g
 
 
+def hexsphere(layers = 5, scaling = 1.2):
+    g = Graph(3)
+    g = initialSphere(g)
+
+    for i in range(0,layers):
+        CURRENT_EXTERNAL_FACETS = []
+        g = impose_layer(g, scaling)
+
+    return g
+
+
 #/////////////////////////////////////////////////////////////////////
 # Local testing
 #/////////////////////////////////////////////////////////////////////
 
 if __name__=="__main__":
 
-    g = Graph(3)
-    g = initialSphere(g)
-    DRAW(g,[1.5,1.5,1.5])()
-    g = hexSphere(g)
-    DRAW(g, [2.0, 2.0, 2.0])()
+    start = time.clock()
+    g = hexsphere(4, 1.2)
+    DRAW(g)()
+    end = time.clock()
 
-
-    #Attenzione! per estrarre correttamente il bordo al passo
-    #successivo e' necessario disegnare PRIMA spigoli e vertici LOWER,
-    #e poi gli UPPER
-    bComplex = boundaryComplex(g)
-    wallComplex = bComplex
-    DRAW(g,[1.5,1.5,1.5])(CAT(wallComplex))
+    print "Sphere builded in ", end - start, " seconds."

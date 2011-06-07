@@ -1,20 +1,19 @@
 #Utilities functions
 from hasselib.graphLib6 import *
-from pyplasm import *
 
 
 def boundaryChain(g):
     myprint("g.getMaxDimCells()",g.getMaxDimCells())
     chain = CELLSPERLEVEL(g)(g.getMaxDimCells())
-    myprint("chain",chain)
     out = [k for k in CAT(AA(DOWNCELLS(g))(chain)) if len(UPCELLS(g)(k))==1]
-    myprint("out",out)
     return out
 
 
-def boundaryComplex(g):
-    chain = boundaryChain(g)
-    myprint("chain",chain)
+def boundaryComplex(g, chain = []):
+
+    if not chain:
+        chain = boundaryChain(g)
+        
     out = [chain]
     for d in range(g.getMaxDimCells()-1):
         chain = list(set(CAT(AA(DOWNCELLS(g))(chain))))
@@ -130,3 +129,11 @@ def get_corner_from(g):
         result = filter(lambda x: vtxes.count(x) == 2, vtxes)
         return [result[0]]
     return get_corner_from0
+
+
+def cmp_by_vecf(g):
+    def cmp_by_vecf0(id):
+        centroid = g.getVecf(id)
+        return abs(centroid[1]) + abs(centroid[2]) + abs(centroid[3])
+    return cmp_by_vecf0
+
