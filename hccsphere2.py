@@ -173,6 +173,8 @@ CURRENT_EXTERNAL_FACETS = []
 
 def impose_layer(g, layer = 1, scaling=1.2):
 
+    offset = (scaling*layer+1)/float(scaling)
+
     global CURRENT_EXTERNAL_FACETS
     #/////////////////////////////////////////////////////////////////////
     #   STEP 1: boundary-complex extraction
@@ -208,7 +210,7 @@ def impose_layer(g, layer = 1, scaling=1.2):
                 upperCorner = g.addNode(0)
                 cornersLow2Up.update({vtx:upperCorner})
                 point = get_coords_from(g)(vtx)[1:]
-                g.setVecf(upperCorner,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling*layer])))
+                g.setVecf(upperCorner,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),offset])))
 
                 upper2lower.update({upperCorner:vtx})
                 #Connessione tra i corner
@@ -232,7 +234,7 @@ def impose_layer(g, layer = 1, scaling=1.2):
                 upperCell = g.addNode(0)
                 edge2UpCentroid.update({edge: upperCell})
                 point = [CENTROID(g)(edge).get(i) for i in range(1,n+1)]
-                g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling*layer])))
+                g.setVecf(upperCell,Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),offset])))
 
                 lowerCell = g.addNode(0)
                 edge2LwCentroid.update({edge: lowerCell})
@@ -266,7 +268,7 @@ def impose_layer(g, layer = 1, scaling=1.2):
         point = [CENTROID(g)(facet).get(i) for i in range(1,n+1)]
         upperCentroid = g.addNode(0)
 
-        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),scaling*layer])))
+        g.setVecf(upperCentroid, Vecf([1.0]+SCALARVECTPROD([UNITVECT(point),offset])))
         facet2UpCentroid.update({facet: upperCentroid})
 
         lowerCentroid = g.addNode(0)
@@ -461,9 +463,8 @@ def hexsphere(layers = 5, scaling = 1.2):
 if __name__=="__main__":
 
     start = time.clock()
-    g = hexsphere(2, 1.2)
-    DRAW(g, [2.0, 2.0, 2.0])()
+    g = hexsphere(2)
     end = time.clock()
 
     print "Sphere builded in ", end - start, " seconds."
-    VIEW(Hpc(g))
+    MOLVIEW(g)

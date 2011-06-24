@@ -137,3 +137,19 @@ def cmp_by_vecf(g):
         return abs(centroid[1]) + abs(centroid[2]) + abs(centroid[3])
     return cmp_by_vecf0
 
+
+def VOLVIEW(g, expl = [1.2, 1.2, 1.2]):
+    all_cells = CAT([CELLSPERLEVEL(g)(i) for i in range(0,4)])
+
+    result = []
+    for cell in all_cells:
+        centroid = CENTROID(g)(cell)
+        if centroid[1] > 0.0:
+            result.append(cell)
+
+    DRAW(g, expl)(result)
+
+
+def MOLVIEW(g):
+    DRAW(g)(CELLSPERLEVEL(g)(3))
+
