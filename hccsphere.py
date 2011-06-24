@@ -169,17 +169,15 @@ def initialSphere(g):
 # Layered sphere 
 #/////////////////////////////////////////////////////////////////////
 
-CURRENT_EXTERNAL_FACETS = []
-
-def impose_layer(g, layer = 1, scaling=1.2):
+def impose_layer(g, ext_facets, layer = 1, scaling=1.2):
 
     offset = (scaling*layer+1)/float(scaling)
 
-    global CURRENT_EXTERNAL_FACETS
+
     #/////////////////////////////////////////////////////////////////////
     #   STEP 1: boundary-complex extraction
     #/////////////////////////////////////////////////////////////////////
-    wallComplex = boundaryComplex(g, CURRENT_EXTERNAL_FACETS)
+    wallComplex = boundaryComplex(g, ext_facets)
     n = g.getPointDim()
 
     #/////////////////////////////////////////////////////////////////////
@@ -297,7 +295,7 @@ def impose_layer(g, layer = 1, scaling=1.2):
             g.addArch(c, newArc)
 
 
-    CURRENT_EXTERNAL_FACETS = []
+    ext_facets = []
     #/////////////////////////////////////////////////////////////////////
     # STEP 3: d-2 and d-3 levels construction
     #/////////////////////////////////////////////////////////////////////
@@ -400,7 +398,7 @@ def impose_layer(g, layer = 1, scaling=1.2):
                                              u_edges_centroids[upper_centroids_idx]])
 
                     new_facet = g.addNode(2)
-                    CURRENT_EXTERNAL_FACETS.append(new_facet)
+                    ext_facets.append(new_facet)
                     g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
                     g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
 
@@ -443,15 +441,16 @@ def impose_layer(g, layer = 1, scaling=1.2):
                 for face in faces: g.addArch(face,node)
 
     assert(facet_count == len(wallComplex[2])*4)
-    return g
+    return g, ext_facets
 
 
 def hexsphere(layers = 2, scaling = 1.2):
     g = Graph(3)
     g = initialSphere(g)
+    ext_facets = []
 
     for i in range(1,layers+1):
-        g = impose_layer(g, i, scaling)
+        g, ext_facets = impose_layer(g, ext_facets, i, scaling)
 
     return g
 
