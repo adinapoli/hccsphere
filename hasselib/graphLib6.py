@@ -1,6 +1,5 @@
 from config import *
 
-
 #//////////////////////////////////////////////
 # Usando questa si velocizza il caricamento dei 
 # batch
@@ -56,26 +55,27 @@ def FINDCELLS(g,nav):
 
 # ////////////////////////////////////////////////
 def GETINTERSECTION(g):
-    def GETINTERSECTION0(from_cells,up_direction=True):
+    def GETINTERSECTION0(from_cells):
 
-        result=[]
+        result = []
+        getNode = g.getNode
         num = len(from_cells)
 
         # use the Tmp info to reset the "reachable" info
         for c in from_cells:
-            it=g.goUp(c) if up_direction else g.goDown(c)
+            it = g.goUp(c)
             while not it.end(): 
-                reached=g.getNode(it.getNode())
-                reached.Tmp=0
+                reached = getNode(it.getNode())
+                reached.Tmp = 0
                 it.goForward()
             
         # increment the "reachable" Tmp, if all nodes reaches one common father
         # then the father is added to the list
         for c in from_cells:
-            it=g.goUp(c) if up_direction else g.goDown(c)
+            it = g.goUp(c)
             while not it.end(): 
-                reached =g.getNode(it.getNode())
-                reached.Tmp=reached.Tmp+1   
+                reached = getNode(it.getNode())
+                reached.Tmp += 1
                 if reached.Tmp==num: 
                     result+=[it.getNode()]
                 it.goForward()

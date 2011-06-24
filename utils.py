@@ -1,6 +1,6 @@
 #Utilities functions
 from hasselib.graphLib6 import *
-
+from itertools import combinations
 
 def boundaryChain(g):
     myprint("g.getMaxDimCells()",g.getMaxDimCells())
@@ -111,8 +111,7 @@ def corners(g):
 
 def get_facet_from(g):
     def get_facet_from0(id_list):
-        pairs = CART([id_list, id_list])
-        pairs = filter(lambda x: x[0] < x[1] and x[0] != x[1], pairs)
+        pairs = combinations(id_list, 2)
         inters = CAT(unique([GETINTERSECTION(g)(p) for p in pairs]))
         upcells = CAT([UPCELLS(g)(i) for i in inters])
         result = filter(lambda x: upcells.count(x) >= 3, upcells)[0]

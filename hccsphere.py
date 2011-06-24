@@ -3,6 +3,10 @@
 import numpy as np
 from utils import *
 import time
+import cProfile
+import pstats
+from itertools import combinations
+
 
 #/////////////////////////////////////////////////////////////////////
 # Utility functions 
@@ -186,7 +190,6 @@ def impose_layer(g, ext_facets, layer = 1, scaling=1.2):
 
     edge2UpCentroid = {}
     edge2LwCentroid = {}
-    #centroidMap = {}
     edges2downcells = {}
     cornersLow2Up = {}
     facet2UpCentroid = {}
@@ -294,7 +297,6 @@ def impose_layer(g, ext_facets, layer = 1, scaling=1.2):
             g.addArch(lowerCentroid, newArc)
             g.addArch(c, newArc)
 
-
     ext_facets = []
     #/////////////////////////////////////////////////////////////////////
     # STEP 3: d-2 and d-3 levels construction
@@ -323,22 +325,34 @@ def impose_layer(g, ext_facets, layer = 1, scaling=1.2):
         u_edges_centroids = [edge2UpCentroid[edge] for edge in facet_edges]
         l_edges_centroids = [upper2lower[vtx] for vtx in u_edges_centroids]
 
+        
         for corner in u_corners_vtx:
             for centroid in u_edges_centroids:
 
                 e1 = GETINTERSECTION(g)([corner, centroid])
+
+                if len(e1) != 1: continue
+
                 corner_idx = u_corners_vtx.index(corner)
                 e2 = GETINTERSECTION(g)([l_corners_vtx[corner_idx],
                                              upper2lower[centroid]])
+
+                if len(e2) != 1: continue
+
                 e3 = GETINTERSECTION(g)([corner, upper2lower[corner]])
+
+                if len(e3) != 1: continue
+
                 e4 = GETINTERSECTION(g)([centroid, upper2lower[centroid]])
 
-                if len(e1) == len(e2) == len(e3) == len(e4) == 1:
-                    if e1 not in not_dup_edges:
-                        new_facet = g.addNode(2)
-                        g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
-                        g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
-                        not_dup_edges.append(e1)
+                if len(e4) != 1: continue
+
+
+                if e1 not in not_dup_edges:
+                    new_facet = g.addNode(2)
+                    g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
+                    g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
+                    not_dup_edges.append(e1)
 
         #Adesso dobbiamo creare le facce "a croce", le 4 facce interne
         #al basket.
@@ -347,16 +361,27 @@ def impose_layer(g, ext_facets, layer = 1, scaling=1.2):
 
         for centroid in u_edges_centroids:
             e1 = GETINTERSECTION(g)([upper_face_centroid, centroid])
+
+            if len(e1) != 1: continue
+
             e2 = GETINTERSECTION(g)([centroid, upper2lower[centroid]])
+
+            if len(e2) != 1: continue
+
             e3 = GETINTERSECTION(g)([upper2lower[centroid],
                                      lower_face_centroid])
+
+            if len(e3) != 1: continue
+
             e4 = GETINTERSECTION(g)([upper_face_centroid,
                                      lower_face_centroid])
 
-            if len(e1) == len(e2) == len(e3) == len(e4) == 1: 
-                new_facet = g.addNode(2)
-                g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
-                g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
+            if len(e4) != 1: continue
+
+
+            new_facet = g.addNode(2)
+            g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
+            g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
 
 
         #Ora e' il turno delle quattro lower facets e degli upper
@@ -371,36 +396,50 @@ def impose_layer(g, ext_facets, layer = 1, scaling=1.2):
             for centroid_pair in lower_centroids_cart:
 
                 e1 = GETINTERSECTION(g)([corner, centroid_pair[0]])
+
+                if len(e1) != 1: continue
+
                 e2 = GETINTERSECTION(g)([centroid_pair[0], lower_face_centroid])
+
+                if len(e2) != 1: continue
+
                 e3 = GETINTERSECTION(g)([lower_face_centroid, centroid_pair[1]])
+
+                if len(e3) != 1: continue
+
                 e4 = GETINTERSECTION(g)([centroid_pair[1], corner])
 
-                if len(e1) == len(e2) == len(e3) == len(e4) == 1:
+                if len(e4) != 1: continue
 
-                    #Aggiungo una lower facet
-                    new_facet = g.addNode(2)
-                    g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
-                    g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
+                #Aggiungo una lower facet
+                new_facet = g.addNode(2)
+                g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
+                g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
 
-                    #Se abbiamo trovato 4 spigoli buoni per le lower facet
-                    #allora andiamo a prendere pure i punti superiori per
-                    #disegnare direttamente le upper facet
-                    facet_count += 1
-                    upper_centroids_idx = l_edges_centroids.index(centroid_pair[0])
-                    e1 = GETINTERSECTION(g)([cornersLow2Up[corner],
-                                             u_edges_centroids[upper_centroids_idx]])
-                    e2 = GETINTERSECTION(g)([u_edges_centroids[upper_centroids_idx],
-                                             upper_face_centroid])
-                    upper_centroids_idx = l_edges_centroids.index(centroid_pair[1])
-                    e3 = GETINTERSECTION(g)([u_edges_centroids[upper_centroids_idx],
-                                             upper_face_centroid])
-                    e4 = GETINTERSECTION(g)([cornersLow2Up[corner],
-                                             u_edges_centroids[upper_centroids_idx]])
+                #Se abbiamo trovato 4 spigoli buoni per le lower facet
+                #allora andiamo a prendere pure i punti superiori per
+                #disegnare direttamente le upper facet
+                facet_count += 1
+                upper_centroids_idx = l_edges_centroids.index(centroid_pair[0])
 
-                    new_facet = g.addNode(2)
-                    ext_facets.append(new_facet)
-                    g.addArch(e1[0], new_facet); g.addArch(e2[0], new_facet)
-                    g.addArch(e3[0], new_facet); g.addArch(e4[0], new_facet)
+                e1 = g.findFirstCommonNode(cornersLow2Up[corner],
+                                           u_edges_centroids[upper_centroids_idx])
+
+                e2 = g.findFirstCommonNode(u_edges_centroids[upper_centroids_idx],
+                                           upper_face_centroid)
+
+                upper_centroids_idx = l_edges_centroids.index(centroid_pair[1])
+
+                e3 = g.findFirstCommonNode(u_edges_centroids[upper_centroids_idx],
+                                           upper_face_centroid)
+
+                e4 = g.findFirstCommonNode(cornersLow2Up[corner],
+                                           u_edges_centroids[upper_centroids_idx])
+
+                new_facet = g.addNode(2)
+                ext_facets.append(new_facet)
+                g.addArch(e1, new_facet); g.addArch(e2, new_facet)
+                g.addArch(e3, new_facet); g.addArch(e4, new_facet)
 
 
         #Ora e' il turno dei cubi gialli, per cui abbiamo bisogno di
@@ -411,9 +450,8 @@ def impose_layer(g, ext_facets, layer = 1, scaling=1.2):
         # l2 = lateral 2
         # l3 = lateral 3
         # l4 = lateral 4
-        upper_centroids_cart = CART([u_edges_centroids, u_edges_centroids])
-        upper_centroids_cart = filter(lambda x: x[0] < x[1] and x[0] != x[1],
-                                      upper_centroids_cart)
+
+        upper_centroids_cart = combinations(u_edges_centroids, 2)
 
         for centroid_pair in upper_centroids_cart:
             common_corner = get_corner_from(g)(centroid_pair)
@@ -462,8 +500,14 @@ def hexsphere(layers = 2, scaling = 1.2):
 if __name__=="__main__":
 
     start = time.clock()
-    g = hexsphere(3)
+    cProfile.runctx("hexsphere()", globals(), locals(), "hexprofiling")
+    #g = hexsphere()
     end = time.clock()
 
+    p = pstats.Stats('hexprofiling')
+    p.sort_stats('cumulative')
+    p.print_stats()
+
     print "Sphere builded in ", end - start, " seconds."
-    VOLVIEW(g)
+
+    #VOLVIEW(g)

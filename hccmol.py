@@ -9,9 +9,9 @@ class Atom:
     def __init__(self, name, coords):
         self.name = name.lower().capitalize()
         self.radius = atomic_radius[self.name[0]]
-        self.scale = self.radius[3]/500.0
+        self.scale = self.radius[3]/200.0
         self.color = atom_color[self.name[0]]
-        self.graph = hexsphere()
+        self.graph = hexsphere(1)
         self.coords = coords
 
 
