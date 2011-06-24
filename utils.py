@@ -149,7 +149,3 @@ def VOLVIEW(g, expl = [1.2, 1.2, 1.2]):
 
     DRAW(g, expl)(result)
 
-
-def MOLVIEW(g):
-    DRAW(g)(CELLSPERLEVEL(g)(3))
-
