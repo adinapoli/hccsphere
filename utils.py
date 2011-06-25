@@ -112,9 +112,14 @@ def corners(g):
 def get_facet_from(g):
     def get_facet_from0(id_list):
         pairs = combinations(id_list, 2)
-        inters = CAT(unique([GETINTERSECTION(g)(p) for p in pairs]))
-        upcells = CAT([UPCELLS(g)(i) for i in inters])
-        result = filter(lambda x: upcells.count(x) >= 3, upcells)[0]
+        edges = set([g.findFirstCommonNode(*p) for p in pairs])
+        edges = filter(lambda x: x != 0, edges)
+
+        #Non so perche ma a volte ottengo 5 id, di cui non
+        #necessariamente il quinto e' di troppo, ma e' sempre
+        #il maggiore della sequenza che va eliminato, quindi
+        #faccio un sort e poi prendo solo i primi 4.
+        result = GETINTERSECTION(g)(sorted(edges)[0:4])[0]
         return result
     return get_facet_from0
 

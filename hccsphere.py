@@ -500,8 +500,8 @@ def hexsphere(layers = 2, scaling = 1.2):
 if __name__=="__main__":
 
     start = time.clock()
-    cProfile.runctx("hexsphere()", globals(), locals(), "hexprofiling")
-    #g = hexsphere()
+    g = hexsphere()
+    cProfile.runctx("Hpc(g)", globals(), locals(), "hexprofiling")
     end = time.clock()
 
     p = pstats.Stats('hexprofiling')
